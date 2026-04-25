@@ -182,13 +182,19 @@ namespace CargoContainersExpanded
             return Mathf.Clamp01(rottableComp.RotProgressPct);
         }
 
-        public bool TryGetRemainingPayloadMarketValue(out float marketValue)
+        public bool TryGetContainerMarketValue(out float marketValue)
         {
             InitializeIfNeeded();
 
             ThingDef payloadDef = PayloadDef;
             int remainingCount = RemainingPayloadCount;
-            if (payloadDef == null || remainingCount <= 0)
+            if (remainingCount <= 0)
+            {
+                marketValue = 0f;
+                return true;
+            }
+
+            if (payloadDef == null)
             {
                 marketValue = 0f;
                 return false;
@@ -862,7 +868,25 @@ namespace CargoContainersExpanded
         public static void Postfix(Thing __instance, ref float __result)
         {
             CompExtractableContainer extractableComp = __instance?.TryGetComp<CompExtractableContainer>();
-            if (extractableComp != null && extractableComp.TryGetRemainingPayloadMarketValue(out float marketValue))
+            if (extractableComp != null && extractableComp.TryGetContainerMarketValue(out float marketValue))
+            {
+                __result = marketValue;
+            }
+        }
+    }
+
+    [HarmonyPatch(typeof(StatExtension), nameof(StatExtension.GetStatValue))]
+    public static class StatExtension_GetStatValue_ExtractCargoPatch
+    {
+        public static void Postfix(Thing thing, StatDef stat, ref float __result)
+        {
+            if (stat != StatDefOf.MarketValue && stat != StatDefOf.MarketValueIgnoreHp)
+            {
+                return;
+            }
+
+            CompExtractableContainer extractableComp = thing?.TryGetComp<CompExtractableContainer>();
+            if (extractableComp != null && extractableComp.TryGetContainerMarketValue(out float marketValue))
             {
                 __result = marketValue;
             }

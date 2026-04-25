@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8" ?>
+
+<Patch>
+
+	<Operation Class="PatchOperationAdd">
+		<xpath>/Defs/ThingDef[defName="RawRice"]</xpath>
+		<value>
+			<stuffProps>
+				<categories>
+					<li>FT_CargoContainerRefrigeratedStuff</li>
+				</categories>
+			</stuffProps>
+		</value>
+	</Operation>
+
+</Patch>

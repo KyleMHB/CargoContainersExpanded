@@ -1,0 +1,77 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+
+  <FT_CargoContainer.label>cargo container</FT_CargoContainer.label>
+  <FT_CargoContainer.description>a cargo container that can safely store your resources,stuff won't vanish when deconstructed.</FT_CargoContainer.description>
+  <FT_CargoContainer_Blueprint.label>cargo container (blueprint)</FT_CargoContainer_Blueprint.label>
+  <FT_CargoContainer_Frame.label>cargo container (building)</FT_CargoContainer_Frame.label>
+  <FT_CargoContainer_Frame.description>a cargo container that can safely store your resources,stuff won't vanish when deconstructed.</FT_CargoContainer_Frame.description>
+
+  <FT_CargoContainerHalf.label>resource half container</FT_CargoContainerHalf.label>
+  <FT_CargoContainerHalf.description>a half Standard size container that can safely store your resources,stuff won't vanish when deconstructed.</FT_CargoContainerHalf.description>
+  <FT_CargoContainerHalf_Blueprint.label>resource half container (blueprint)</FT_CargoContainerHalf_Blueprint.label>
+  <FT_CargoContainerHalf_Frame.label>resource half container (building)</FT_CargoContainerHalf_Frame.label>
+  <FT_CargoContainerHalf_Frame.description>a half Standard size container that can safely store your resources,stuff won't vanish when deconstructed.</FT_CargoContainerHalf_Frame.description>
+
+  <FT_CargoContainerMeal.label>survival pack container</FT_CargoContainerMeal.label>
+  <FT_CargoContainerMeal.description>a cargo container that can safely store a great amounts of survival meal.</FT_CargoContainerMeal.description>
+  <FT_CargoContainerMeal_Blueprint.label>survival pack container (blueprint)</FT_CargoContainerMeal_Blueprint.label>
+  <FT_CargoContainerMeal_Frame.label>survival pack container (building)</FT_CargoContainerMeal_Frame.label>
+  <FT_CargoContainerMeal_Frame.description>a cargo container that can safely store a great amounts of survival meal.</FT_CargoContainerMeal_Frame.description>
+
+  <FT_ContainerHerb.label>herbal medicine container</FT_ContainerHerb.label>
+  <FT_ContainerHerb.description>a cargo container that can safely store a great amounts of herbal medicine.</FT_ContainerHerb.description>
+  <FT_ContainerHerb_Blueprint.label>herbal medicine container (blueprint)</FT_ContainerHerb_Blueprint.label>
+  <FT_ContainerHerb_Frame.label>herbal medicine container (building)</FT_ContainerHerb_Frame.label>
+  <FT_ContainerHerb_Frame.description>a cargo container that can safely store a great amounts of herbal medicine.</FT_ContainerHerb_Frame.description>
+
+  <FT_ContainerMedical.label>medicine container</FT_ContainerMedical.label>
+  <FT_ContainerMedical.description>a cargo container that can safely store a great amounts of medicine.</FT_ContainerMedical.description>
+  <FT_ContainerMedical_Blueprint.label>medicine container (blueprint)</FT_ContainerMedical_Blueprint.label>
+  <FT_ContainerMedical_Frame.label>medicine container (building)</FT_ContainerMedical_Frame.label>
+  <FT_ContainerMedical_Frame.description>a cargo container that can safely store a great amounts of medicine.</FT_ContainerMedical_Frame.description>
+
+  <FT_ContainerMedicalAdv.label>glitterworld medicine container</FT_ContainerMedicalAdv.label>
+  <FT_ContainerMedicalAdv.description>a cargo container that can safely store a great amounts of glitterworld medicine.</FT_ContainerMedicalAdv.description>
+  <FT_ContainerMedicalAdv_Blueprint.label>glitterworld medicine container (blueprint)</FT_ContainerMedicalAdv_Blueprint.label>
+  <FT_ContainerMedicalAdv_Frame.label>glitterworld medicine container (building)</FT_ContainerMedicalAdv_Frame.label>
+  <FT_ContainerMedicalAdv_Frame.description>a cargo container that can safely store a great amounts of glitterworld medicine.</FT_ContainerMedicalAdv_Frame.description>
+
+  <FT_ContainerYayo.label>Yayo container</FT_ContainerYayo.label>
+  <FT_ContainerYayo.description>a cargo container that can safely store a great amounts of Yayo.</FT_ContainerYayo.description>
+  <FT_ContainerYayo_Blueprint.label>Yayo container (blueprint)</FT_ContainerYayo_Blueprint.label>
+  <FT_ContainerYayo_Frame.label>Yayo container (building)</FT_ContainerYayo_Frame.label>
+  <FT_ContainerYayo_Frame.description>a cargo container that can safely store a great amounts of Yayo.</FT_ContainerYayo_Frame.description>
+
+  <FT_ContainerFlake.label>flake container</FT_ContainerFlake.label>
+  <FT_ContainerFlake.description>a cargo container that can safely store a great amounts of flake.</FT_ContainerFlake.description>
+  <FT_ContainerFlake_Blueprint.label>flake container (blueprint)</FT_ContainerFlake_Blueprint.label>
+  <FT_ContainerFlake_Frame.label>flake container (building)</FT_ContainerFlake_Frame.label>
+  <FT_ContainerFlake_Frame.description>a cargo container that can safely store a great amounts of flake.</FT_ContainerFlake_Frame.description>
+
+  <FT_ContainerBeer.label>Beer container tank</FT_ContainerBeer.label>
+  <FT_ContainerBeer.description>a cargo container with built-in cooling system that can safely store a great amounts of beer. just be aware that content inside will leak if cargo get destroyed.</FT_ContainerBeer.description>
+  <FT_ContainerBeer_Blueprint.label>Beer container tank (blueprint)</FT_ContainerBeer_Blueprint.label>
+  <FT_ContainerBeer_Frame.label>Beer container tank (building)</FT_ContainerBeer_Frame.label>
+  <FT_ContainerBeer_Frame.description>a cargo container with built-in cooling system that can safely store a great amounts of beer. just be aware that content inside will leak if cargo get destroyed.</FT_ContainerBeer_Frame.description>
+
+  <FT_ContainerNeutroamine.label>Neutroamine container tank</FT_ContainerNeutroamine.label>
+  <FT_ContainerNeutroamine.description>a cargo tank with built-in cooling system that can safely store a great amounts of neutroamine. just be aware that content inside will leak if tank get destroyed.</FT_ContainerNeutroamine.description>
+  <FT_ContainerNeutroamine_Blueprint.label>Neutroamine container tank (blueprint)</FT_ContainerNeutroamine_Blueprint.label>
+  <FT_ContainerNeutroamine_Frame.label>Neutroamine container tank (building)</FT_ContainerNeutroamine_Frame.label>
+  <FT_ContainerNeutroamine_Frame.description>a cargo tank with built-in cooling system that can safely store a great amounts of neutroamine. just be aware that content inside will leak if tank get destroyed.</FT_ContainerNeutroamine_Frame.description>
+
+  <FT_ContainerWort.label>Wort container tank</FT_ContainerWort.label>
+  <FT_ContainerWort.description>a cargo tank with built-in cooling system that can safely store a great amounts of wort. just be aware that content inside will leak if tank get destroyed.</FT_ContainerWort.description>
+  <FT_ContainerWort_Blueprint.label>Wort container tank (blueprint)</FT_ContainerWort_Blueprint.label>
+  <FT_ContainerWort_Frame.label>Wort container tank (building)</FT_ContainerWort_Frame.label>
+  <FT_ContainerWort_Frame.description>a cargo tank with built-in cooling system that can safely store a great amounts of wort. just be aware that content inside will leak if tank get destroyed.</FT_ContainerWort_Frame.description>
+
+  <FT_ContainerChemfuel.label>Chemfuel container tank</FT_ContainerChemfuel.label>
+  <FT_ContainerChemfuel.description>a cargo tank that can safely store a great amounts of chemfuel. just be aware that content inside will leak if tank get destroyed.</FT_ContainerChemfuel.description>
+  <FT_ContainerChemfuel_Blueprint.label>Chemfuel container tank (blueprint)</FT_ContainerChemfuel_Blueprint.label>
+  <FT_ContainerChemfuel_Frame.label>Chemfuel container tank (building)</FT_ContainerChemfuel_Frame.label>
+  <FT_ContainerChemfuel_Frame.description>a cargo tank that can safely store a great amounts of chemfuel. just be aware that content inside will leak if tank get destroyed.</FT_ContainerChemfuel_Frame.description>
+
+
+</LanguageData>

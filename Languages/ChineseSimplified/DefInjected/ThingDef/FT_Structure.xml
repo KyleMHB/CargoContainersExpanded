@@ -1,0 +1,76 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+
+  <FT_CargoContainer.label>资源集装箱</FT_CargoContainer.label>
+  <FT_CargoContainer.description>封存多余材料的标准集装箱,除了能节省储藏空间外也是一个坚固的掩体,拆除并不会造成材料损失.</FT_CargoContainer.description>
+  <FT_CargoContainer_Blueprint.label>资源集装箱(蓝图)</FT_CargoContainer_Blueprint.label>
+  <FT_CargoContainer_Frame.label>资源集装箱 (建造中)</FT_CargoContainer_Frame.label>
+  <FT_CargoContainer_Frame.description>封存多余材料的标准集装箱,除了能节省储藏空间外也是一个坚固的掩体,拆除并不会造成材料损失.</FT_CargoContainer_Frame.description>
+
+  <FT_CargoContainerHalf.label>资源集装箱</FT_CargoContainerHalf.label>
+  <FT_CargoContainerHalf.description>封存多余材料的1/2标准集装箱,除了能节省储藏空间外也是一个坚固的掩体,拆除并不会造成材料损失.</FT_CargoContainerHalf.description>
+  <FT_CargoContainerHalf_Blueprint.label>资源集装箱(蓝图)</FT_CargoContainerHalf_Blueprint.label>
+  <FT_CargoContainerHalf_Frame.label>资源集装箱(建造中)</FT_CargoContainerHalf_Frame.label>
+  <FT_CargoContainerHalf_Frame.description>封存多余材料的1/2标准集装箱,除了能节省储藏空间外也是一个坚固的掩体,拆除并不会造成材料损失.</FT_CargoContainerHalf_Frame.description>
+
+  <FT_CargoContainerMeal.label>生存物资集装箱</FT_CargoContainerMeal.label>
+  <FT_CargoContainerMeal.description>封存生存食品包的标准集装箱.</FT_CargoContainerMeal.description>
+  <FT_CargoContainerMeal_Blueprint.label>生存物资集装箱(蓝图)</FT_CargoContainerMeal_Blueprint.label>
+  <FT_CargoContainerMeal_Frame.label>生存物资集装箱(建造中)</FT_CargoContainerMeal_Frame.label>
+  <FT_CargoContainerMeal_Frame.description>封存生存食品包的标准集装箱.</FT_CargoContainerMeal_Frame.description>
+
+  <FT_ContainerHerb.label>草药集装箱</FT_ContainerHerb.label>
+  <FT_ContainerHerb.description>封存草药的标准集装箱.</FT_ContainerHerb.description>
+  <FT_ContainerHerb_Blueprint.label>草药集装箱(蓝图)</FT_ContainerHerb_Blueprint.label>
+  <FT_ContainerHerb_Frame.label>草药集装箱(建造中)</FT_ContainerHerb_Frame.label>
+  <FT_ContainerHerb_Frame.description>封存草药的标准集装箱.</FT_ContainerHerb_Frame.description>
+
+  <FT_ContainerMedical.label>药品集装箱</FT_ContainerMedical.label>
+  <FT_ContainerMedical.description>封存药品的标准集装箱.</FT_ContainerMedical.description>
+  <FT_ContainerMedical_Blueprint.label>药品集装箱(蓝图)</FT_ContainerMedical_Blueprint.label>
+  <FT_ContainerMedical_Frame.label>药品集装箱(建造中)</FT_ContainerMedical_Frame.label>
+  <FT_ContainerMedical_Frame.description>封存药品的标准集装箱.</FT_ContainerMedical_Frame.description>
+
+  <FT_ContainerMedicalAdv.label>闪耀世界药品集装箱</FT_ContainerMedicalAdv.label>
+  <FT_ContainerMedicalAdv.description>封存闪耀世界药品的标准集装箱.</FT_ContainerMedicalAdv.description>
+  <FT_ContainerMedicalAdv_Blueprint.label>闪耀世界药品集装箱(蓝图)</FT_ContainerMedicalAdv_Blueprint.label>
+  <FT_ContainerMedicalAdv_Frame.label>闪耀世界药品集装箱(建造中)</FT_ContainerMedicalAdv_Frame.label>
+  <FT_ContainerMedicalAdv_Frame.description>封存闪耀世界药品的标准集装箱.</FT_ContainerMedicalAdv_Frame.description>
+
+ <FT_ContainerYayo.label>呀呦粉集装箱</FT_ContainerYayo.label>
+  <FT_ContainerYayo.description>封存呀呦粉的标准集装箱.</FT_ContainerYayo.description>
+  <FT_ContainerYayo_Blueprint.label>呀呦粉集装箱(蓝图)</FT_ContainerYayo_Blueprint.label>
+  <FT_ContainerYayo_Frame.label>呀呦粉集装箱(建造中)</FT_ContainerYayo_Frame.label>
+  <FT_ContainerYayo_Frame.description>封存呀呦粉的标准集装箱.</FT_ContainerYayo_Frame.description>
+
+  <FT_ContainerFlake.label>薄片集装箱</FT_ContainerFlake.label>
+  <FT_ContainerFlake.description>封存片的标准集装箱.</FT_ContainerFlake.description>
+  <FT_ContainerFlake_Blueprint.label>薄片集装箱(蓝图)</FT_ContainerFlake_Blueprint.label>
+  <FT_ContainerFlake_Frame.label>薄片集装箱(建造中)</FT_ContainerFlake_Frame.label>
+  <FT_ContainerFlake_Frame.description>封存片的标准集装箱.</FT_ContainerFlake_Frame.description>
+
+  <FT_ContainerBeer.label>啤酒集装储罐</FT_ContainerBeer.label>
+  <FT_ContainerBeer.description>封存啤酒的液体储罐,内置液体冷却系统,一旦被破坏内容物就会泄漏.</FT_ContainerBeer.description>
+  <FT_ContainerBeer_Blueprint.label>啤酒集装储罐(蓝图)</FT_ContainerBeer_Blueprint.label>
+  <FT_ContainerBeer_Frame.label>啤酒集装储罐(建造中)</FT_ContainerBeer_Frame.label>
+  <FT_ContainerBeer_Frame.description>封存啤酒的液体储罐,内置液体冷却系统,一旦被破坏内容物就会泄漏.</FT_ContainerBeer_Frame.description>
+
+  <FT_ContainerNeutroamine.label>中性胺集装储罐</FT_ContainerNeutroamine.label>
+  <FT_ContainerNeutroamine.description>封存中性胺的液体储罐,内置液体冷却系统,一旦被破坏内容物就会泄漏..</FT_ContainerNeutroamine.description>
+  <FT_ContainerNeutroamine_Blueprint.label>中性胺集装储罐(蓝图)</FT_ContainerNeutroamine_Blueprint.label>
+  <FT_ContainerNeutroamine_Frame.label>中性胺集装储罐(建造中)</FT_ContainerNeutroamine_Frame.label>
+  <FT_ContainerNeutroamine_Frame.description>封存中性胺的液体储罐,内置液体冷却系统,一旦被破坏内容物就会泄漏.</FT_ContainerNeutroamine_Frame.description>
+
+  <FT_ContainerWort.label>麦芽汁集装储罐</FT_ContainerWort.label>
+  <FT_ContainerWort.description>封存麦芽汁的液体储罐,内置液体冷却系统,一旦被破坏内容物就会泄漏.</FT_ContainerWort.description>
+  <FT_ContainerWort_Blueprint.label>麦芽汁集装储罐(蓝图)</FT_ContainerWort_Blueprint.label>
+  <FT_ContainerWort_Frame.label>麦芽汁集装储罐(建造中)</FT_ContainerWort_Frame.label>
+  <FT_ContainerWort_Frame.description>封存麦芽汁的液体储罐,内置液体冷却系统,一旦被破坏内容物就会泄漏.</FT_ContainerWort_Frame.description>
+
+  <FT_ContainerChemfuel.label>燃料集装储罐</FT_ContainerChemfuel.label>
+  <FT_ContainerChemfuel.description>封存燃料的液体储罐,一旦被破坏有可能会爆炸.</FT_ContainerChemfuel.description>
+  <FT_ContainerChemfuel_Blueprint.label>燃料集装储罐(蓝图)</FT_ContainerChemfuel_Blueprint.label>
+  <FT_ContainerChemfuel_Frame.label>燃料集装储罐(建造中)</FT_ContainerChemfuel_Frame.label>
+  <FT_ContainerChemfuel_Frame.description>封存燃料的液体储罐,一旦被破坏有可能会爆炸.</FT_ContainerChemfuel_Frame.description>
+
+</LanguageData>

@@ -1,0 +1,354 @@
+<?xml version="1.0" encoding="utf-8" ?>
+
+<Defs>
+
+	<TipSetDef>
+    <defName>CargoContainer_Tips</defName>
+		<tips>
+			<li>Interstellar Organization for Standardization (ISO) is composed of multiple interplanetary companies.</li>
+			<li>The ISO cargo container size is formulated by the Interstellar Organization for Standardization (ISO) mainly because their cargoship is widely used by companies and nations in coreworld and midworld.</li>
+			<li>Interstellar Industries Complex of Nara (IICN)is a Interstellar industrial organization all over themidworld and rimworld,their development is aimed at expanding the living space of humanity in any possible.</li>
+		</tips>
+	</TipSetDef>
+
+	<ThingDef ParentName="BuildingBase" Name="FT_CargoContainer_Base" Abstract="True">
+		<thingClass>Building</thingClass>
+		<category>Building</category>
+		<blockLight>false</blockLight>
+		<altitudeLayer>Building</altitudeLayer>
+		<passability>Impassable</passability>
+		<fillPercent>1</fillPercent>
+		<coversFloor>false</coversFloor>
+		<holdsRoof>false</holdsRoof>
+		<castEdgeShadows>true</castEdgeShadows>
+		<tickerType>Never</tickerType>    
+		<canOverlapZones>false</canOverlapZones>
+		<researchPrerequisites>
+			<li>Machining</li>
+		</researchPrerequisites>
+		<pathCostIgnoreRepeat>false</pathCostIgnoreRepeat>	
+		<resourcesFractionWhenDeconstructed>1.00</resourcesFractionWhenDeconstructed>
+		<building>
+			<allowAutoroof>false</allowAutoroof>
+			<ai_chillDestination>false</ai_chillDestination>
+			<expandHomeArea>false</expandHomeArea>	
+			<isInert>true</isInert>
+		</building>
+		<statBases>
+			<MarketValue>2500</MarketValue>
+			<Beauty>5</Beauty>
+			<Flammability>0.0</Flammability>
+		</statBases>
+		<filthLeaving>Filth_RubbleBuilding</filthLeaving>
+		<rotatable>true</rotatable>
+		<selectable>true</selectable>
+		<neverMultiSelect>true</neverMultiSelect>
+		<terrainAffordanceNeeded>Light</terrainAffordanceNeeded>
+		<designationCategory>Misc</designationCategory>
+		<repairEffect>ConstructMetal</repairEffect>
+	</ThingDef>	
+	
+	<ThingDef ParentName="FT_CargoContainer_Base">
+		<defName>FT_CargoContainer</defName>
+		<label>resource container</label>
+		<description>a cargo container that can safely store your resources,stuff won't vanish when deconstructed.</description>
+		<graphicData>
+			<texPath>Things/ContainerBasic/Container</texPath>
+			<graphicClass>Graphic_Multi</graphicClass>
+			<shaderType>CutoutComplex</shaderType>
+			<drawSize>(4.3,4.3)</drawSize>
+		</graphicData>
+		<costList>
+			<Steel>60</Steel>
+		</costList>
+		<costStuffCount>1200</costStuffCount>
+		<stuffCategories>
+			<li>Metallic</li>
+			<li>Woody</li>
+			<li>Stony</li>
+			<li>Fabric</li>
+			<li>Leathery</li>
+		</stuffCategories>
+		<size>(4,2)</size>
+		<statBases>
+			<MarketValue>2000</MarketValue>
+			<MaxHitPoints>2500</MaxHitPoints>
+			<WorkToBuild>500</WorkToBuild>
+		</statBases>
+	</ThingDef>	
+	
+	<ThingDef ParentName="FT_CargoContainer_Base">
+		<defName>FT_CargoContainerHalf</defName>
+		<label>resource half container</label>
+		<description>a half Standard size container that can safely store your resources,stuff won't vanish when deconstructed.</description>
+		<graphicData>
+			<texPath>Things/ContainerHalf/Container</texPath>
+			<graphicClass>Graphic_Multi</graphicClass>
+			<shaderType>CutoutComplex</shaderType>
+			<drawSize>(4.3,4.3)</drawSize>
+		</graphicData>
+		<costList>
+			<Steel>30</Steel>
+		</costList>
+		<costStuffCount>600</costStuffCount>
+		<stuffCategories>
+			<li>Metallic</li>
+			<li>Woody</li>
+			<li>Stony</li>
+			<li>Fabric</li>
+			<li>Leathery</li>
+		</stuffCategories>
+		<size>(2,2)</size>
+		<statBases>
+			<MarketValue>1000</MarketValue>
+			<MaxHitPoints>1500</MaxHitPoints>
+			<WorkToBuild>250</WorkToBuild>
+		</statBases>
+	</ThingDef>	
+	
+	<DesignatorDropdownGroupDef>
+    <defName>FT_CargoContainerItem</defName>
+    <label>Item Container</label>
+	</DesignatorDropdownGroupDef>
+	
+	<ThingDef ParentName="FT_CargoContainer_Base">
+		<defName>FT_CargoContainerMeal</defName>
+		<label>survival pack container</label>
+		<designatorDropdown>FT_CargoContainerItem</designatorDropdown>
+		<description>a cargo container that can safely store a great amounts of survival meal.</description>
+		<graphicData>
+			<texPath>Things/ContainerMeal/Container</texPath>
+			<graphicClass>Graphic_Multi</graphicClass>
+			<drawSize>(4.3,4.3)</drawSize>
+		</graphicData>
+		<costList>
+			<Steel>60</Steel>
+			<MealSurvivalPack>250</MealSurvivalPack>
+		</costList>
+		<size>(4,2)</size>
+		<statBases>
+			<MaxHitPoints>2500</MaxHitPoints>
+			<WorkToBuild>500</WorkToBuild>
+		</statBases>
+	</ThingDef>	
+
+	<ThingDef ParentName="FT_CargoContainer_Base">
+		<defName>FT_ContainerHerb</defName>
+		<label>herbal medicine container</label>
+		<designatorDropdown>FT_CargoContainerItem</designatorDropdown>
+		<description>a cargo container that can safely store a great amounts of herbal medicine.</description>
+		<graphicData>
+			<texPath>Things/ContainerHerb/Container</texPath>
+			<graphicClass>Graphic_Multi</graphicClass>
+			<drawSize>(4.3,4.3)</drawSize>
+		</graphicData>
+		<costList>
+			<Steel>60</Steel>
+			<MedicineHerbal>250</MedicineHerbal>
+		</costList>
+		<size>(4,2)</size>
+		<statBases>
+			<MaxHitPoints>2500</MaxHitPoints>
+			<WorkToBuild>500</WorkToBuild>
+		</statBases>
+	</ThingDef>	
+
+	<ThingDef ParentName="FT_CargoContainer_Base">
+		<defName>FT_ContainerMedical</defName>
+		<label>medicine container</label>
+		<designatorDropdown>FT_CargoContainerItem</designatorDropdown>
+		<description>a cargo container that can safely store a great amounts of medicine.</description>
+		<graphicData>
+			<texPath>Things/ContainerMedical/Container</texPath>
+			<graphicClass>Graphic_Multi</graphicClass>
+			<drawSize>(4.3,4.3)</drawSize>
+		</graphicData>
+		<costList>
+			<Steel>60</Steel>
+			<MedicineIndustrial>250</MedicineIndustrial>
+		</costList>
+		<size>(4,2)</size>
+		<statBases>
+			<MaxHitPoints>2500</MaxHitPoints>
+			<WorkToBuild>500</WorkToBuild>
+		</statBases>
+	</ThingDef>	
+
+	<ThingDef ParentName="FT_CargoContainer_Base">
+		<defName>FT_ContainerMedicalAdv</defName>
+		<label>glitterworld medicine container</label>
+		<designatorDropdown>FT_CargoContainerItem</designatorDropdown>
+		<description>a cargo container that can safely store a great amounts of glitterworld medicine.</description>
+		<graphicData>
+			<texPath>Things/ContainerMedicalAdv/Container</texPath>
+			<graphicClass>Graphic_Multi</graphicClass>
+			<drawSize>(4.3,4.3)</drawSize>
+		</graphicData>
+		<costList>
+			<Steel>60</Steel>
+			<MedicineUltratech>250</MedicineUltratech>
+		</costList>
+		<size>(4,2)</size>
+		<statBases>
+			<MaxHitPoints>2500</MaxHitPoints>
+			<WorkToBuild>500</WorkToBuild>
+		</statBases>
+	</ThingDef>	
+	
+	<ThingDef ParentName="FT_CargoContainer_Base">
+		<defName>FT_ContainerYayo</defName>
+		<label>Yayo container</label>
+		<designatorDropdown>FT_CargoContainerItem</designatorDropdown>
+		<description>a cargo container that can safely store a great amounts of Yayo.</description>
+		<graphicData>
+			<texPath>Things/ContainerYayo/Container</texPath>
+			<graphicClass>Graphic_Multi</graphicClass>
+			<drawSize>(4.3,4.3)</drawSize>
+		</graphicData>
+		<costList>
+			<Steel>60</Steel>
+			<Yayo>1200</Yayo>
+		</costList>
+		<size>(4,2)</size>
+		<statBases>
+			<MaxHitPoints>2500</MaxHitPoints>
+			<WorkToBuild>500</WorkToBuild>
+		</statBases>
+	</ThingDef>	
+	
+	<ThingDef ParentName="FT_CargoContainer_Base">
+		<defName>FT_ContainerFlake</defName>
+		<label>flake container</label>
+		<designatorDropdown>FT_CargoContainerItem</designatorDropdown>
+		<description>a cargo container that can safely store a great amounts of flake.</description>
+		<graphicData>
+			<texPath>Things/ContainerFlake/Container</texPath>
+			<graphicClass>Graphic_Multi</graphicClass>
+			<drawSize>(4.3,4.3)</drawSize>
+		</graphicData>
+		<costList>
+			<Steel>60</Steel>
+			<Flake>1200</Flake>
+		</costList>
+		<size>(4,2)</size>
+		<statBases>
+			<MaxHitPoints>2500</MaxHitPoints>
+			<WorkToBuild>500</WorkToBuild>
+		</statBases>
+	</ThingDef>	
+	
+	<ThingDef ParentName="FT_CargoContainer_Base" Name="FT_GasContainer_Base" Abstract="True">
+		<tickerType>Normal</tickerType>    
+		<leaveResourcesWhenKilled>false</leaveResourcesWhenKilled>
+		<!--
+		<comps>
+			<li Class="CompProperties_HeatPusher">
+				<compClass>CompHeatPusherPowered</compClass>
+				<heatPerSecond>3</heatPerSecond>
+			</li>
+		</comps>
+		-->
+		<filthLeaving>Filth_Fuel</filthLeaving>
+	</ThingDef>	
+	
+	<ThingDef ParentName="FT_GasContainer_Base">
+		<defName>FT_ContainerBeer</defName>
+		<label>Beer container tank</label>
+		<designatorDropdown>FT_CargoContainerItem</designatorDropdown>
+		<description>a cargo container with built-in cooling system that can safely store a great amounts of beer. just be aware that content inside will leak if cargo get destroyed.</description>
+		<graphicData>
+			<texPath>Things/ContainerBeer/Container</texPath>
+			<graphicClass>Graphic_Multi</graphicClass>
+			<drawSize>(4.3,4.3)</drawSize>
+		</graphicData>
+		<costList>
+			<Steel>60</Steel>
+			<Neutroamine>30</Neutroamine>
+			<Chemfuel>30</Chemfuel>
+			<Beer>1200</Beer>
+		</costList>
+		<size>(4,2)</size>
+		<statBases>
+			<MaxHitPoints>2500</MaxHitPoints>
+			<WorkToBuild>500</WorkToBuild>
+		</statBases>
+	</ThingDef>	
+	
+	<ThingDef ParentName="FT_GasContainer_Base">
+		<defName>FT_ContainerNeutroamine</defName>
+		<label>Neutroamine container tank</label>
+		<designatorDropdown>FT_CargoContainerItem</designatorDropdown>
+		<description>a cargo tank with built-in cooling system that can safely store a great amounts of neutroamine. just be aware that content inside will leak if tank get destroyed.</description>
+		<graphicData>
+			<texPath>Things/ContainerNeutroamine/Container</texPath>
+			<graphicClass>Graphic_Multi</graphicClass>
+			<drawSize>(4.3,4.3)</drawSize>
+		</graphicData>
+		<costList>
+			<Steel>60</Steel>
+			<Chemfuel>30</Chemfuel>
+			<Neutroamine>1230</Neutroamine>
+		</costList>
+		<size>(4,2)</size>
+		<statBases>
+			<MaxHitPoints>2500</MaxHitPoints>
+			<WorkToBuild>500</WorkToBuild>
+		</statBases>
+	</ThingDef>	
+	
+	<ThingDef ParentName="FT_GasContainer_Base">
+		<defName>FT_ContainerWort</defName>
+		<label>Wort container tank</label>
+		<designatorDropdown>FT_CargoContainerItem</designatorDropdown>
+		<description>a cargo tank with built-in cooling system that can safely store a great amounts of wort. just be aware that content inside will leak if tank get destroyed.</description>
+		<graphicData>
+			<texPath>Things/ContainerWort/Container</texPath>
+			<graphicClass>Graphic_Multi</graphicClass>
+			<drawSize>(4.3,4.3)</drawSize>
+		</graphicData>
+		<costList>
+			<Steel>60</Steel>
+			<Neutroamine>30</Neutroamine>
+			<Chemfuel>30</Chemfuel>
+			<Wort>800</Wort>
+		</costList>
+		<size>(4,2)</size>
+		<statBases>
+			<MaxHitPoints>2500</MaxHitPoints>
+			<WorkToBuild>500</WorkToBuild>
+		</statBases>
+	</ThingDef>	
+	
+	<ThingDef ParentName="FT_GasContainer_Base">
+		<defName>FT_ContainerChemfuel</defName>
+		<label>Chemfuel container tank</label>
+		<designatorDropdown>FT_CargoContainerItem</designatorDropdown>
+		<description>a cargo tank that can safely store a great amounts of chemfuel. just be aware that content inside will leak if tank get destroyed.</description>
+		<graphicData>
+			<texPath>Things/ContainerChemfuel/Container</texPath>
+			<graphicClass>Graphic_Multi</graphicClass>
+			<drawSize>(4.3,4.3)</drawSize>
+		</graphicData>
+		<comps>
+			<li Class="CompProperties_Explosive">
+				<explosiveRadius>10</explosiveRadius>
+				<explosiveDamageType>Flame</explosiveDamageType>
+				<destroyThingOnExplosionSize>2</destroyThingOnExplosionSize>
+				<startWickHitPointsPercent>0.01</startWickHitPointsPercent>
+				<preExplosionSpawnThingDef>Filth_Fuel</preExplosionSpawnThingDef>
+				<preExplosionSpawnChance>1</preExplosionSpawnChance>
+				<wickTicks>70~150</wickTicks>
+			</li>
+		</comps>
+		<costList>
+			<Steel>75</Steel>
+			<Chemfuel>1200</Chemfuel>
+		</costList>
+		<size>(4,2)</size>
+		<statBases>
+			<MaxHitPoints>2500</MaxHitPoints>
+			<WorkToBuild>500</WorkToBuild>
+		</statBases>
+	</ThingDef>	
+	
+</Defs>	

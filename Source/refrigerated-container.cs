@@ -38,16 +38,14 @@ namespace CargoContainersExpanded
                 return;
             }
 
-            int hitPointsBeforeRotTick = parent?.HitPoints ?? 0;
             base.CompTickRare();
-            RestoreHitPointsIfRotDamaged(hitPointsBeforeRotTick);
         }
 
         public override string CompInspectStringExtra()
         {
             if (IsPowered())
             {
-                return "Powered refrigeration is active.";
+                return "CCE_PoweredRefrigerationActive".Translate();
             }
 
             float temperature = GetCurrentTemperature();
@@ -58,16 +56,6 @@ namespace CargoContainersExpanded
         private bool IsPowered()
         {
             return powerComp != null && powerComp.PowerOn;
-        }
-
-        private void RestoreHitPointsIfRotDamaged(int hitPointsBeforeRotTick)
-        {
-            if (parent == null || parent.Destroyed || parent.HitPoints >= hitPointsBeforeRotTick)
-            {
-                return;
-            }
-
-            parent.HitPoints = hitPointsBeforeRotTick;
         }
 
         private void ConfigureRotPropertiesFromStuff()
@@ -120,16 +108,16 @@ namespace CargoContainersExpanded
         {
             if (rotRate <= 0f)
             {
-                return "CurrentlyFrozen".Translate();
+                return "CCE_CurrentlyFrozen".Translate();
             }
 
             string ticksUntilRot = FormatTicksUntilRot(TicksUntilRotAtCurrentTemp);
             if (rotRate < 1f)
             {
-                return "CurrentlyRefrigerated".Translate(ticksUntilRot);
+                return "CCE_CurrentlyRefrigerated".Translate(ticksUntilRot);
             }
 
-            return "NotRefrigerated".Translate(ticksUntilRot);
+            return "CCE_NotRefrigerated".Translate(ticksUntilRot);
         }
 
         private string GetRotRateLabel(float rotRate)
@@ -138,11 +126,9 @@ namespace CargoContainersExpanded
                 ? rotRate * GenDate.TicksPerDay / PropsRot.TicksToRotStart
                 : 0f;
 
-            return string.Format(
-                CultureInfo.InvariantCulture,
-                "Rot rate: {0:0.##}x ({1:0.#}%/day)",
-                rotRate,
-                rotPercentPerDay * 100f);
+            return "CCE_RotRate".Translate(
+                rotRate.ToString("0.##", CultureInfo.InvariantCulture),
+                (rotPercentPerDay * 100f).ToString("0.#", CultureInfo.InvariantCulture));
         }
 
         private float GetCurrentTemperature()
@@ -175,7 +161,6 @@ namespace CargoContainersExpanded
     {
         private const float IconSize = 0.78f;
         private const float IconAltitudeOffset = 0.02f;
-        private static readonly Dictionary<ThingDef, Material> OverlayMaterials = new Dictionary<ThingDef, Material>();
 
         public override void DrawWorker(Vector3 loc, Rot4 rot, ThingDef thingDef, Thing thing, float extraRotation)
         {
@@ -188,32 +173,15 @@ namespace CargoContainersExpanded
                 return;
             }
 
-            Material material = GetOverlayMaterial(stuffDef, icon);
+            Material material = MaterialPool.MatFrom(icon);
             Vector3 iconLoc = loc;
             iconLoc.y += IconAltitudeOffset;
 
             Matrix4x4 matrix = Matrix4x4.TRS(iconLoc, Quaternion.identity, new Vector3(IconSize, 1f, IconSize));
             Graphics.DrawMesh(MeshPool.plane10, matrix, material, 0);
         }
-
-        private static Material GetOverlayMaterial(ThingDef stuffDef, Texture2D icon)
-        {
-            if (stuffDef != null && OverlayMaterials.TryGetValue(stuffDef, out Material cachedMaterial))
-            {
-                return cachedMaterial;
-            }
-
-            Material material = MaterialPool.MatFrom(icon);
-            if (stuffDef != null)
-            {
-                OverlayMaterials[stuffDef] = material;
-            }
-
-            return material;
-        }
     }
 
-    [StaticConstructorOnStartup]
     public static class RefrigeratedContainerBootstrap
     {
         private const string RefrigeratedStuffCategoryDefName = "FT_CargoContainerRefrigeratedStuff";
@@ -223,12 +191,7 @@ namespace CargoContainersExpanded
             "FT_RefrigeratedContainerHalf"
         };
 
-        static RefrigeratedContainerBootstrap()
-        {
-            Initialize();
-        }
-
-        private static void Initialize()
+        public static void Initialize()
         {
             try
             {

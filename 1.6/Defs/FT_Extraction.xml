@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8" ?>
+
+<Defs>
+
+	<WorkGiverDef>
+		<defName>FT_DoBillsExtractCargoContainers</defName>
+		<label>extract cargo containers</label>
+		<giverClass>WorkGiver_DoBill</giverClass>
+		<workType>Crafting</workType>
+		<priorityInType>20</priorityInType>
+		<verb>extract from</verb>
+		<gerund>extracting from</gerund>
+		<requiredCapacities>
+			<li>Manipulation</li>
+		</requiredCapacities>
+		<prioritizeSustains>true</prioritizeSustains>
+	</WorkGiverDef>
+
+</Defs>

@@ -20,6 +20,7 @@ namespace CargoContainersExpanded
 
     public class CompRefrigeratedContainer : CompRottable
     {
+        private const float RotDaysMultiplier = 2f;
         private CompPowerTrader powerComp;
 
         private ThingDef StuffDef => parent?.Stuff ?? parent?.def?.defaultStuff;
@@ -77,7 +78,7 @@ namespace CargoContainersExpanded
         {
             var stuffDef = StuffDef;
             var rottableProps = stuffDef?.GetCompProperties<CompProperties_Rottable>();
-            return rottableProps?.daysToRotStart ?? 1f;
+            return (rottableProps?.daysToRotStart ?? 1f) * RotDaysMultiplier;
         }
 
         private string GetRotInspectString(float rotRate)

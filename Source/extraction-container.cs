@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using HarmonyLib;
 using RimWorld;
+using UnityEngine;
 using Verse;
 
 namespace CargoContainersExpanded
@@ -101,6 +102,7 @@ namespace CargoContainersExpanded
 
     public class CompExtractableContainer : ThingComp
     {
+        private const float MarketValueFactor = 0.1f;
         private bool initialized;
         private bool destroyWhenIterationCompletes;
         private int remainingPayloadCount;
@@ -162,6 +164,45 @@ namespace CargoContainersExpanded
         public bool HasMatchingPayloadRecipe(RecipeDef recipeDef)
         {
             return CargoExtractionUtility.IsValidExtractionRecipeFor(parent, recipeDef);
+        }
+
+        public float GetCurrentRotProgressPct()
+        {
+            if (parent is not ThingWithComps thingWithComps)
+            {
+                return 0f;
+            }
+
+            CompRottable rottableComp = thingWithComps.GetComp<CompRottable>();
+            if (rottableComp == null)
+            {
+                return 0f;
+            }
+
+            return Mathf.Clamp01(rottableComp.RotProgressPct);
+        }
+
+        public bool TryGetRemainingPayloadMarketValue(out float marketValue)
+        {
+            InitializeIfNeeded();
+
+            ThingDef payloadDef = PayloadDef;
+            int remainingCount = RemainingPayloadCount;
+            if (payloadDef == null || remainingCount <= 0)
+            {
+                marketValue = 0f;
+                return false;
+            }
+
+            float payloadMarketValue = payloadDef.BaseMarketValue;
+            if (payloadMarketValue <= 0f || float.IsNaN(payloadMarketValue) || float.IsInfinity(payloadMarketValue))
+            {
+                marketValue = 0f;
+                return false;
+            }
+
+            marketValue = payloadMarketValue * remainingCount * MarketValueFactor;
+            return true;
         }
 
         public int TakePayload(int requestedCount)
@@ -756,6 +797,7 @@ namespace CargoContainersExpanded
         {
             var clampedProducts = new List<Thing>();
             ThingDef payloadDef = extractableComp.PayloadDef;
+            float rotProgressPct = extractableComp.GetCurrentRotProgressPct();
             int remainingBatchCount = batchCount;
             foreach (Thing product in products)
             {
@@ -779,6 +821,7 @@ namespace CargoContainersExpanded
                 }
 
                 product.stackCount = takenCount;
+                ApplyRotProgress(product, rotProgressPct);
                 clampedProducts.Add(product);
                 remainingBatchCount -= takenCount;
                 if (remainingBatchCount <= 0)
@@ -788,6 +831,41 @@ namespace CargoContainersExpanded
             }
 
             return clampedProducts;
+        }
+
+        private static void ApplyRotProgress(Thing product, float rotProgressPct)
+        {
+            if (rotProgressPct <= 0f || product is not ThingWithComps thingWithComps)
+            {
+                return;
+            }
+
+            CompRottable rottableComp = thingWithComps.GetComp<CompRottable>();
+            if (rottableComp == null)
+            {
+                return;
+            }
+
+            int ticksToRotStart = rottableComp.PropsRot?.TicksToRotStart ?? 0;
+            if (ticksToRotStart <= 0)
+            {
+                return;
+            }
+
+            rottableComp.RotProgress = ticksToRotStart * Mathf.Clamp01(rotProgressPct);
+        }
+    }
+
+    [HarmonyPatch(typeof(Thing), nameof(Thing.MarketValue), MethodType.Getter)]
+    public static class Thing_MarketValue_ExtractCargoPatch
+    {
+        public static void Postfix(Thing __instance, ref float __result)
+        {
+            CompExtractableContainer extractableComp = __instance?.TryGetComp<CompExtractableContainer>();
+            if (extractableComp != null && extractableComp.TryGetRemainingPayloadMarketValue(out float marketValue))
+            {
+                __result = marketValue;
+            }
         }
     }
 
@@ -854,21 +932,6 @@ namespace CargoContainersExpanded
             {
                 __result = true;
             }
-        }
-    }
-
-    [HarmonyPatch(typeof(WorkGiver_DoBill), nameof(WorkGiver_DoBill.HasJobOnThing))]
-    public static class WorkGiverDoBill_HasJobOnThing_ExtractCargoPatch
-    {
-        public static void Prefix(WorkGiver_DoBill __instance, ref bool __state)
-        {
-            __state = CargoExtractionPowerBypass.TryEnter(__instance);
-        }
-
-        public static Exception Finalizer(bool __state, Exception __exception)
-        {
-            CargoExtractionPowerBypass.Exit(__state);
-            return __exception;
         }
     }
 

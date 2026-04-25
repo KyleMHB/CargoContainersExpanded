@@ -796,14 +796,94 @@ namespace CargoContainersExpanded
     {
         public static void Postfix(Building_WorkTable __instance, ref bool __result)
         {
-            if (__instance is Building_ExtractableCargoContainer container)
+            if (CargoExtractionPowerBypass.IsExtractableContainerWithPayload(__instance))
             {
-                var extractableComp = container.GetComp<CompExtractableContainer>();
-                if (extractableComp != null && extractableComp.HasPayload)
-                {
-                    __result = true;
-                }
+                __result = true;
             }
+        }
+    }
+
+    public static class CargoExtractionPowerBypass
+    {
+        private const string ExtractionWorkGiverDefName = "FT_DoBillsExtractCargoContainers";
+
+        [ThreadStatic]
+        private static int activeExtractionWorkGiverScopes;
+
+        public static bool IsActive => activeExtractionWorkGiverScopes > 0;
+
+        public static bool IsExtractableContainerWithPayload(Thing thing)
+        {
+            var extractableComp = thing?.TryGetComp<CompExtractableContainer>();
+            return extractableComp != null && extractableComp.HasPayload;
+        }
+
+        public static bool ShouldBypassPowerFor(Thing thing)
+        {
+            return IsActive && IsExtractableContainerWithPayload(thing);
+        }
+
+        public static bool TryEnter(WorkGiver_DoBill workGiver)
+        {
+            if (workGiver?.def?.defName != ExtractionWorkGiverDefName)
+            {
+                return false;
+            }
+
+            activeExtractionWorkGiverScopes++;
+            return true;
+        }
+
+        public static void Exit(bool entered)
+        {
+            if (!entered)
+            {
+                return;
+            }
+
+            activeExtractionWorkGiverScopes = Math.Max(activeExtractionWorkGiverScopes - 1, 0);
+        }
+    }
+
+    [HarmonyPatch(typeof(CompPowerTrader), nameof(CompPowerTrader.PowerOn), MethodType.Getter)]
+    public static class CompPowerTrader_PowerOn_ExtractCargoPatch
+    {
+        public static void Postfix(CompPowerTrader __instance, ref bool __result)
+        {
+            if (!__result && CargoExtractionPowerBypass.ShouldBypassPowerFor(__instance?.parent))
+            {
+                __result = true;
+            }
+        }
+    }
+
+    [HarmonyPatch(typeof(WorkGiver_DoBill), nameof(WorkGiver_DoBill.HasJobOnThing))]
+    public static class WorkGiverDoBill_HasJobOnThing_ExtractCargoPatch
+    {
+        public static void Prefix(WorkGiver_DoBill __instance, ref bool __state)
+        {
+            __state = CargoExtractionPowerBypass.TryEnter(__instance);
+        }
+
+        public static Exception Finalizer(bool __state, Exception __exception)
+        {
+            CargoExtractionPowerBypass.Exit(__state);
+            return __exception;
+        }
+    }
+
+    [HarmonyPatch(typeof(WorkGiver_DoBill), nameof(WorkGiver_DoBill.JobOnThing))]
+    public static class WorkGiverDoBill_JobOnThing_ExtractCargoPatch
+    {
+        public static void Prefix(WorkGiver_DoBill __instance, ref bool __state)
+        {
+            __state = CargoExtractionPowerBypass.TryEnter(__instance);
+        }
+
+        public static Exception Finalizer(bool __state, Exception __exception)
+        {
+            CargoExtractionPowerBypass.Exit(__state);
+            return __exception;
         }
     }
 

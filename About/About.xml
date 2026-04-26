@@ -2,6 +2,7 @@
 <ModMetaData>
 	<name>Cargo Containers Expanded</name>
   	<author>kylohb</author>
+  	<url>https://github.com/KyleMHB/CargoContainersExpanded</url>
 	<supportedVersions>
 		<li>1.6</li>
 	</supportedVersions>
@@ -13,7 +14,7 @@
 			<downloadUrl>https://github.com/pardeike/HarmonyRimWorld/releases/latest</downloadUrl>
 		</li>
 	</modDependencies>
-	<packageId>Aoba.CargoContainer</packageId>
+	<packageId>KyloHB.CargoContainerExpanded</packageId>
 	<description>
 	A maintained RimWorld 1.6 fork that adds stuffable cargo containers, fixed-payload resource containers and tanks, clean payload refunds on deconstruction, low-priority extraction bills for backup stockpiles, refrigerated food storage containers, and localized inspect/recipe text.
 	</description>

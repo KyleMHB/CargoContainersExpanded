@@ -1,78 +1,87 @@
 # Cargo Containers Expanded
 
-A maintained RimWorld 1.6 fork of AOBA's Cargo container.
+Cargo Containers Expanded is a maintained RimWorld 1.6 fork of AOBA's cargo container mod.
 
-Cargo Containers Expanded adds buildable cargo containers and tanks that compact large amounts of resources into buildings, then let you extract the stored payload later through bills. This fork keeps the original mod's core idea while adding cleaner payload handling, deconstruction refunds, refrigerated containers, payload-aware wealth values, cargo rot handling, and RimWorld 1.6 support.
+It adds buildable cargo containers and tanks that compact large amounts of resources into buildings, then let you extract the stored payload later through bills.
 
 ## Features
 
-- Stuffable resource containers for metallic, woody, stony, fabric, and leathery resources.
-- Half-size resource containers for smaller stockpiles.
-- Fixed-payload containers for survival meals, medicine, drugs, beer, neutroamine, wort, and chemfuel.
-- Extraction bills that return container payloads in batches of 1, 25, or 100.
-- Clean deconstruction refunds for remaining payloads and frame materials.
-- Refrigerated containers for rottable resources.
-- Refrigerated containers keep powered payloads preserved and rot when unpowered according to temperature.
-- Extracted rottable products inherit the container's current rot progress.
-- Container market value scales with remaining payload at 10% of the payload's base market value.
-- Powered refrigeration inspect text, rot state, rot rate, and payload count display.
-- Localized inspect and recipe text.
+- **Stuffable resource containers** for metallic, woody, stony, fabric, and leathery resources.
+- **Half-size resource containers** for smaller stockpiles.
+- **Fixed-payload containers** for survival meals, medicine, drugs, beer, neutroamine, wort, and chemfuel.
+- **Extraction bills** that return container payloads in batches of 1, 25, or 100.
+- **Clean deconstruction refunds** for remaining payloads and frame materials.
+- **Refrigerated containers** for rottable resources.
+- **Rot-aware payload handling** so refrigerated contents keep their state when extracted.
+- **Payload-based market value** so container wealth reflects remaining stored resources.
+- **Localized inspect and recipe text**.
 
-## Containers
+## Installation
 
-The mod includes containers for:
+### Manual Installation
 
-- Stuffable resources
-- Half-size stuffable resources
-- Survival meals
-- Herbal medicine
-- Medicine
-- Glitterworld medicine
-- Yayo
-- Flake
-- Beer
-- Neutroamine
-- Wort
-- Chemfuel
-- Refrigerated rottable resources
+1. Download or clone the repository.
+2. Place the mod folder in your RimWorld `Mods` directory.
+3. Enable **Harmony** and **Cargo Containers Expanded** in RimWorld's mod list.
 
-## Important Notes
+### Steam Workshop
 
-Cargo containers are buildings, not normal stockpiles. Their contents are represented as an internal payload. Use the container's bills to extract the payload back into item stacks.
+If you are using a Workshop build, subscribe to the published mod and keep the RimWorld load order the same as the manual installation instructions.
 
-Refrigerated containers require power. If power is lost, the payload can rot based on the contained item and the surrounding temperature. When you extract rottable payloads, the produced item stacks keep the container's current rot progress.
+## Usage
 
-Container market value is based on the remaining payload. As payload is extracted, the container's market value drops.
+Cargo containers are buildings, not stockpiles. Their contents are represented as an internal payload.
 
-Chemfuel containers are dangerous if destroyed.
+Use the container bills to extract payload back into item stacks. Refrigerated containers require power to stay actively refrigerated, and unpowered refrigerated containers can rot based on temperature and item type.
 
-## Requirements
+## Configuration
 
-- RimWorld 1.6
-- Harmony
+The mod uses RimWorld's normal mod and building configuration systems.
 
-## Building
+Important notes:
 
-This repository contains the C# source project under `Source/`.
+- refrigerated containers require power to stay active
+- chemfuel containers are dangerous if destroyed
+- container value changes as payload is extracted
+
+## Building from Source
+
+Prerequisites:
+
+- .NET SDK compatible with the project
+- RimWorld 1.6 reference access through the project package references
+
+Build the project with:
 
 ```powershell
 dotnet build .\Source\cargo-containers-expanded.csproj -c Release
 ```
 
-The mod expects the compiled assembly to be available in the mod's `Assemblies/` folder for RimWorld to load it.
+## Testing and Validation
+
+The primary validation command is the Release build:
+
+```powershell
+dotnet build .\Source\cargo-containers-expanded.csproj -c Release
+```
+
+## Contributing & Forking Policy
+
+> Contributions, issues, and feature requests are welcome.
+>
+> **Forking Policy:** If your fork primarily consists of bug fixes or feature additions that align with the core vision of this project, I reserve the right to request that your changes be submitted as a Pull Request to this existing codebase rather than being published as a completely separate standalone release, package, listing, or distribution.
+
+## Links
+
+- **Source Repository:** <https://github.com/KyleMHB/CargoContainersExpanded>
+- **Issue Tracker:** <https://github.com/KyleMHB/CargoContainersExpanded/issues>
+- **Original Steam Workshop mod:** <https://steamcommunity.com/sharedfiles/filedetails/?id=2725808118>
+
+## License
+
+> This project is a fork of **Cargo container** and inherits the original project's license. See the original project for license terms: <https://steamcommunity.com/sharedfiles/filedetails/?id=2725808118>.
 
 ## Credits
 
-Original mod by AOBA:
-
-- [Cargo container on Steam Workshop](https://steamcommunity.com/sharedfiles/filedetails/?id=2725808118)
-
-Current maintained fork by kylohb:
-
-- [Cargo Containers Expanded](https://github.com/KyleMHB/CargoContainersExpanded)
-
-## Issues
-
-Please report bugs, compatibility problems, or balance issues through GitHub issues:
-
-- [Issue tracker](https://github.com/KyleMHB/CargoContainersExpanded/issues)
+- Original mod by AOBA.
+- Current maintained fork by kylohb.

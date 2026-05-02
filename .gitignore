@@ -1,6 +1,8 @@
 .dotnet/
 Source/obj/
 bin/
+*.pdb
+*~
 *.user
 Source/.vs/
 STEAM_DESCRIPTION.txt

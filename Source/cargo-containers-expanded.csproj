@@ -12,8 +12,7 @@
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <RimWorldInstallDir Condition="'$(RimWorldInstallDir)' == ''">E:\Steam\steamapps\common\RimWorld</RimWorldInstallDir>
     <HarmonyWorkshopDir Condition="'$(HarmonyWorkshopDir)' == ''">E:\Steam\steamapps\workshop\content\294100\2009463077\Current</HarmonyWorkshopDir>
-    <DeployModDir Condition="'$(DeployModDir)' == ''">E:\Steam\steamapps\common\RimWorld\Mods\Cargo Containers Expanded</DeployModDir>
-    <OutputPath>$(DeployModDir)\Assemblies\</OutputPath>
+    <OutputPath>..\Assemblies\</OutputPath>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="Assembly-CSharp">

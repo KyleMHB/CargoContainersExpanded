@@ -14,6 +14,6 @@
 			<downloadUrl>https://github.com/pardeike/HarmonyRimWorld/releases/latest</downloadUrl>
 		</li>
 	</modDependencies>
-	<packageId>KyloHB.CargoContainerExpanded</packageId>
+	<packageId>KyleMHB.CargoContainerExpanded</packageId>
 	<description>Adds cargo containers, tanks, extraction bills, and refrigerated storage for RimWorld 1.6.</description>
 </ModMetaData>

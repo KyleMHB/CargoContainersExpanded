@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-08-28
+
+- Improved runtime performance with cached extractable-container checks, inert tank ticking, and guarded recipe filtering.
+- Declared the original Cargo Container package incompatible and moved Harmony patches to a fork-specific owner ID.
+- Hardened deconstruction refunds with prepare-before-destroy behavior and lossless placement fallback.
+- Preserved the intentional 10% stored-payload wealth rule, 2x unpowered rot duration, RawRice refrigerated default, save keys, Def names, and extraction behavior.
+- Replaced machine-specific build references with pinned development packages, locked restores, deterministic output, repository validation, and Windows CI.
+- Corrected English translation errors while retaining legacy Simplified and Traditional Chinese translations with honest English fallback for new UI.
+- Updated README, Steam-description source, testing evidence, scoped MIT licensing, and third-party provenance documentation.
+- Completed the focused RimWorld 1.6.4871 smoke suite covering startup, construction, ticking, extraction, power, market value, save compatibility, refunds, localization, and incompatibility metadata.
+
 ## 2026-05-02
 
 ### Added

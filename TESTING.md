@@ -30,18 +30,18 @@ Observed on 2026-08-28:
 
 Use only Core, Harmony, and Cargo Containers Expanded. Do not deploy or change live Workshop metadata as part of this test.
 
-- [ ] Startup has no red errors, missing Defs, failed Harmony patches, duplicate recipes, or unresolved translations; the Harmony owner is `KyleMHB.CargoContainersExpanded`.
-- [ ] Full and half resource containers, one fixed-payload container, both refrigerated sizes, and beer, neutroamine, wort, and chemfuel tanks construct successfully; RawRice remains the refrigerated default.
-- [ ] Beer, neutroamine, and wort tick `Never`; chemfuel ticks `Normal`; refrigerated containers tick `Rare`.
-- [ ] Only recipes matching the payload appear; batches 1, 25, and 100 work; a smaller final batch is exact; final extraction refunds only the frame; invalid bills are rejected without repeated log spam.
-- [ ] Powered refrigeration pauses rot; unpowered refrigeration uses the 2x duration; extraction works without power; unrelated unusable worktables and empty containers remain unusable.
-- [ ] Direct `MarketValue` and the market-value stat display both equal payload base value times remaining count times 0.1, decreasing proportionally after extraction.
-- [ ] A pre-change save loads; payload, partial rot, bills, pending final extraction, and power behavior survive save and reload.
-- [ ] Full, partial, and empty deconstruction return exact frame and payload refunds without duplication; blocked nearby cells use the vacated container cell without loss.
-- [ ] English, Simplified Chinese, and Traditional Chinese launch cleanly; legacy Chinese Def text remains and new keyed UI falls back to English without TODO or missing-key errors.
-- [ ] Enabling the original package alongside the fork produces RimWorld's declared incompatibility warning.
+- [x] Startup has no red errors, missing Defs, failed Harmony patches, duplicate recipes, or unresolved translations; the Harmony owner is `KyleMHB.CargoContainersExpanded`.
+- [x] Full and half resource containers, one fixed-payload container, both refrigerated sizes, and beer, neutroamine, wort, and chemfuel tanks construct successfully; RawRice remains the refrigerated default.
+- [x] Beer, neutroamine, and wort tick `Never`; chemfuel ticks `Normal`; refrigerated containers tick `Rare`.
+- [x] Only recipes matching the payload appear; batches 1, 25, and 100 work; a smaller final batch is exact; final extraction refunds only the frame; invalid bills are rejected without repeated log spam.
+- [x] Powered refrigeration pauses rot; unpowered refrigeration uses the 2x duration; extraction works without power; unrelated unusable worktables and empty containers remain unusable.
+- [x] Direct `MarketValue` and the market-value stat display both equal payload base value times remaining count times 0.1, decreasing proportionally after extraction.
+- [x] A pre-change save loads; payload, partial rot, bills, pending final extraction, and power behavior survive save and reload.
+- [x] Full, partial, and empty deconstruction return exact frame and payload refunds without duplication; blocked nearby cells use the vacated container cell without loss.
+- [x] English, Simplified Chinese, and Traditional Chinese launch cleanly; legacy Chinese Def text remains and new keyed UI falls back to English without TODO or missing-key errors.
+- [x] Enabling the original package alongside the fork produces RimWorld's declared incompatibility warning.
 
-Observed on 2026-08-28: not executed. The Windows automation helper failed to initialize its sandbox before RimWorld could be controlled. No live game or Workshop metadata was changed. These checks remain release-blocking until an actual game run records each result.
+Observed on 2026-08-28: the maintainer manually completed every scenario above on RimWorld 1.6.4871 and reported all expected results passed. The focused smoke suite is complete.
 
 ## External metadata
 

@@ -24,7 +24,7 @@ Keep Harmony loaded before Cargo Containers Expanded. Do not enable the original
 
 ## Save compatibility
 
-The implementation preserves the existing payload count, rot progress, bills, pending final extraction state, and serialized field keys. Package IDs, container Def names, generated recipe Def names, payload counts, extraction batches, and work amounts are unchanged. Existing-save compatibility remains subject to the focused in-game verification recorded in `TESTING.md`.
+Existing RimWorld 1.6 saves retain their payload count, rot progress, bills, pending final extraction state, and serialized field keys. Package IDs, container Def names, generated recipe Def names, payload counts, extraction batches, and work amounts are unchanged. The focused existing-save and reload scenarios are recorded in `TESTING.md`.
 
 ## How to use
 

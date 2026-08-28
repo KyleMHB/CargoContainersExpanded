@@ -20,7 +20,8 @@ namespace CargoContainersExpanded
 
     public class CompRefrigeratedContainer : CompRottable
     {
-        private const float RotDaysMultiplier = 2f;
+        // Intentional balance rule: unpowered storage doubles the loose item's rot duration.
+        private const float UnpoweredRotDurationMultiplier = 2f;
         private CompPowerTrader powerComp;
 
         private ThingDef StuffDef => parent?.Stuff ?? parent?.def?.defaultStuff;
@@ -78,7 +79,7 @@ namespace CargoContainersExpanded
         {
             var stuffDef = StuffDef;
             var rottableProps = stuffDef?.GetCompProperties<CompProperties_Rottable>();
-            return (rottableProps?.daysToRotStart ?? 1f) * RotDaysMultiplier;
+            return (rottableProps?.daysToRotStart ?? 1f) * UnpoweredRotDurationMultiplier;
         }
 
         private string GetRotInspectString(float rotRate)
@@ -243,7 +244,6 @@ namespace CargoContainersExpanded
                 return;
             }
 
-            var defaultStuff = eligibleTargets[0];
             foreach (var defName in RefrigeratedBuildableDefNames)
             {
                 var buildable = DefDatabase<ThingDef>.GetNamedSilentFail(defName);
@@ -253,7 +253,6 @@ namespace CargoContainersExpanded
                     continue;
                 }
 
-                buildable.defaultStuff = defaultStuff;
                 buildable.stuffCategories ??= new List<StuffCategoryDef>();
                 if (!buildable.stuffCategories.Contains(refrigeratedStuffCategory))
                 {

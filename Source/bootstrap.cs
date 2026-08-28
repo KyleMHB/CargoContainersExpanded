@@ -13,7 +13,7 @@ namespace CargoContainersExpanded
             {
                 RefrigeratedContainerBootstrap.Initialize();
                 CargoExtractionUtility.ConfigureExtractionDefs();
-                new Harmony("Aoba.CargoContainer.Patches").PatchAll();
+                new Harmony("KyleMHB.CargoContainersExpanded").PatchAll();
             }
             catch (Exception exception)
             {

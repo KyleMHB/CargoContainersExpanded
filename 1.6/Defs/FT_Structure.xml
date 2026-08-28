@@ -366,7 +366,6 @@
 	</ThingDef>	
 	
 	<ThingDef ParentName="FT_CargoContainer_Base" Name="FT_GasContainer_Base" Abstract="True">
-		<tickerType>Normal</tickerType>    
 		<leaveResourcesWhenKilled>false</leaveResourcesWhenKilled>
 		<filthLeaving>Filth_Fuel</filthLeaving>
 	</ThingDef>	
@@ -461,6 +460,7 @@
 	
 	<ThingDef ParentName="FT_GasContainer_Base">
 		<defName>FT_ContainerChemfuel</defName>
+		<tickerType>Normal</tickerType>
 		<label>Chemfuel container tank</label>
 		<designatorDropdown>FT_CargoContainerItem</designatorDropdown>
 		<description>a pressurized cargo tank that can safely store large quantities of chemfuel. Contents leak if the tank is destroyed.</description>

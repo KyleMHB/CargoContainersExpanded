@@ -1,0 +1,42 @@
+name: Validate
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  validate:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 9.0.316
+          cache: true
+          cache-dependency-path: Source/packages.lock.json
+
+      - name: Restore locked dependencies
+        run: dotnet restore --locked-mode
+
+      - name: Validate repository
+        shell: pwsh
+        run: ./Scripts/Validate.ps1
+
+      - name: Build Release
+        run: dotnet build ./Source/cargo-containers-expanded.csproj -c Release --no-restore
+
+      - name: Validate built package
+        shell: pwsh
+        run: ./Scripts/Validate.ps1
+
+      - name: Verify packaged output
+        shell: pwsh
+        run: |
+          $files = @(Get-ChildItem ./Assemblies -File)
+          if ($files.Count -ne 1 -or $files[0].Name -cne 'CargoContainersExpanded.dll') {
+            throw "Assemblies must contain only CargoContainersExpanded.dll. Found: $($files.Name -join ', ')"
+          }
+
+      - name: Verify tracked assembly is reproducible
+        run: git diff --exit-code -- Assemblies/CargoContainersExpanded.dll

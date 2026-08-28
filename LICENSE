@@ -1,6 +1,8 @@
+Scope notice: This MIT license applies only to code and other contributions authored for the Cargo Containers Expanded fork by KyleMHB and fork contributors. It does not relicense definitions, text, artwork, or other material inherited from AOBA's original Cargo Container mod. The permission and licensing terms for that upstream-derived material are unknown; see THIRD_PARTY_NOTICES.md.
+
 MIT License
 
-Copyright (c) 2026 Kyle
+Copyright (c) 2026 KyleMHB and Cargo Containers Expanded contributors
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

@@ -10,7 +10,7 @@ namespace CargoContainersExpanded
 {
     public class Building_ExtractableCargoContainer : Building_WorkTable
     {
-        private bool spawningCleanRefunds;
+        private bool cleanDeconstructionInProgress;
         private Rot4 cachedInteractionCellRotation = Rot4.Invalid;
         private IntVec3 cachedInteractionCell = IntVec3.Invalid;
         private List<IntVec3> cachedInteractionCells;
@@ -33,28 +33,49 @@ namespace CargoContainersExpanded
 
         public override void Destroy(DestroyMode mode = DestroyMode.Vanish)
         {
-            if (mode == DestroyMode.Deconstruct && !spawningCleanRefunds && Map != null)
+            if (cleanDeconstructionInProgress)
             {
-                var extractableComp = GetComp<CompExtractableContainer>();
-                if (extractableComp != null)
-                {
-                    spawningCleanRefunds = true;
-                    try
-                    {
-                        extractableComp.SpawnCleanRefunds(Position, Map);
-                    }
-                    catch (Exception exception)
-                    {
-                        Log.Error($"Cargo Containers Expanded: failed to spawn extraction refunds for {def?.defName}.\n{exception}");
-                    }
-                    finally
-                    {
-                        spawningCleanRefunds = false;
-                    }
-                }
+                return;
             }
 
-            base.Destroy(mode);
+            if (mode != DestroyMode.Deconstruct || Map == null)
+            {
+                base.Destroy(mode);
+                return;
+            }
+
+            CompExtractableContainer extractableComp = GetComp<CompExtractableContainer>();
+            if (extractableComp == null)
+            {
+                base.Destroy(mode);
+                return;
+            }
+
+            if (!extractableComp.TryPrepareCleanRefunds(out List<Thing> preparedRefunds, out string preparationError))
+            {
+                string error = $"Cargo Containers Expanded: aborted deconstruction of {def?.defName ?? "unknown container"}; refunds could not be prepared. {preparationError}";
+                Log.Error(error);
+                Messages.Message(error, this, MessageTypeDefOf.RejectInput, false);
+                return;
+            }
+
+            Map refundMap = Map;
+            IntVec3 refundPosition = Position;
+            cleanDeconstructionInProgress = true;
+            try
+            {
+                base.Destroy(mode);
+                CompExtractableContainer.PlacePreparedRefunds(preparedRefunds, refundPosition, refundMap);
+            }
+            catch
+            {
+                CompExtractableContainer.DestroyPreparedRefunds(preparedRefunds);
+                throw;
+            }
+            finally
+            {
+                cleanDeconstructionInProgress = false;
+            }
         }
 
         private IntVec3 GetCargoInteractionCell()
@@ -102,7 +123,8 @@ namespace CargoContainersExpanded
 
     public class CompExtractableContainer : ThingComp
     {
-        private const float MarketValueFactor = 0.1f;
+        // Intentional balance rule: stored payload contributes ten percent of its loose-item wealth.
+        private const float StoredPayloadMarketValueFactor = 0.1f;
         private bool initialized;
         private bool destroyWhenIterationCompletes;
         private int remainingPayloadCount;
@@ -207,7 +229,7 @@ namespace CargoContainersExpanded
                 return false;
             }
 
-            marketValue = payloadMarketValue * remainingCount * MarketValueFactor;
+            marketValue = payloadMarketValue * remainingCount * StoredPayloadMarketValueFactor;
             return true;
         }
 
@@ -241,22 +263,68 @@ namespace CargoContainersExpanded
             parent.Destroy(DestroyMode.Deconstruct);
         }
 
-        public void SpawnCleanRefunds(IntVec3 position, Map map)
+        public bool TryPrepareCleanRefunds(out List<Thing> preparedRefunds, out string error)
         {
-            if (map == null)
+            preparedRefunds = new List<Thing>();
+            error = null;
+            try
+            {
+                foreach (ThingDefCountClass refund in GetFrameRefunds())
+                {
+                    PrepareStacks(refund.thingDef, refund.count, preparedRefunds);
+                }
+
+                ThingDef payloadDef = PayloadDef;
+                if (payloadDef != null && RemainingPayloadCount > 0)
+                {
+                    PrepareStacks(payloadDef, RemainingPayloadCount, preparedRefunds);
+                }
+
+                return true;
+            }
+            catch (Exception exception)
+            {
+                error = exception.Message;
+                DestroyPreparedRefunds(preparedRefunds);
+                preparedRefunds.Clear();
+                return false;
+            }
+        }
+
+        public static void PlacePreparedRefunds(List<Thing> preparedRefunds, IntVec3 position, Map map)
+        {
+            if (preparedRefunds == null || map == null)
             {
                 return;
             }
 
-            foreach (ThingDefCountClass refund in GetFrameRefunds())
+            foreach (Thing stack in preparedRefunds)
             {
-                SpawnStack(refund.thingDef, refund.count, position, map);
+                if (stack == null || stack.Destroyed || stack.Spawned)
+                {
+                    continue;
+                }
+
+                if (!GenPlace.TryPlaceThing(stack, position, map, ThingPlaceMode.Near))
+                {
+                    GenSpawn.Spawn(stack, position, map);
+                }
+            }
+        }
+
+        public static void DestroyPreparedRefunds(List<Thing> preparedRefunds)
+        {
+            if (preparedRefunds == null)
+            {
+                return;
             }
 
-            ThingDef payloadDef = PayloadDef;
-            if (payloadDef != null && RemainingPayloadCount > 0)
+            foreach (Thing stack in preparedRefunds)
             {
-                SpawnStack(payloadDef, RemainingPayloadCount, position, map);
+                if (stack != null && !stack.Destroyed && !stack.Spawned)
+                {
+                    stack.Destroy(DestroyMode.Vanish);
+                }
             }
         }
 
@@ -316,7 +384,7 @@ namespace CargoContainersExpanded
             }
         }
 
-        private static void SpawnStack(ThingDef thingDef, int count, IntVec3 position, Map map)
+        private static void PrepareStacks(ThingDef thingDef, int count, List<Thing> preparedRefunds)
         {
             if (thingDef == null || count <= 0)
             {
@@ -330,13 +398,7 @@ namespace CargoContainersExpanded
                 int stackCount = Math.Min(remainingCount, stackLimit);
                 Thing stack = ThingMaker.MakeThing(thingDef);
                 stack.stackCount = stackCount;
-                if (!GenPlace.TryPlaceThing(stack, position, map, ThingPlaceMode.Near))
-                {
-                    Log.Error($"Cargo Containers Expanded: failed to place {stackCount}x {thingDef.defName} refund near {position}.");
-                    stack.Destroy();
-                    return;
-                }
-
+                preparedRefunds.Add(stack);
                 remainingCount -= stackCount;
             }
         }
@@ -346,13 +408,13 @@ namespace CargoContainersExpanded
     {
         public override bool AvailableOnNow(Thing thing, BodyPartRecord part = null)
         {
-            var extractableComp = thing?.TryGetComp<CompExtractableContainer>();
+            CargoExtractionUtility.TryGetExtractableComp(thing, out CompExtractableContainer extractableComp);
             return extractableComp != null && extractableComp.CanRunRecipe(recipe);
         }
 
         public override AcceptanceReport AvailableReport(Thing thing, BodyPartRecord part = null)
         {
-            var extractableComp = thing?.TryGetComp<CompExtractableContainer>();
+            CargoExtractionUtility.TryGetExtractableComp(thing, out CompExtractableContainer extractableComp);
             if (extractableComp == null)
             {
                 return false;
@@ -364,7 +426,7 @@ namespace CargoContainersExpanded
         public override void Notify_IterationCompleted(Pawn billDoer, List<Thing> ingredients)
         {
             base.Notify_IterationCompleted(billDoer, ingredients);
-            var extractableComp = billDoer?.CurJob?.bill?.billStack?.billGiver?.AsThing()?.TryGetComp<CompExtractableContainer>();
+            CargoExtractionUtility.TryGetExtractableComp(billDoer?.CurJob?.bill?.billStack?.billGiver?.AsThing(), out CompExtractableContainer extractableComp);
             extractableComp?.CompleteExtractionIteration();
         }
     }
@@ -383,7 +445,24 @@ namespace CargoContainersExpanded
 
         private static readonly Dictionary<ThingDef, List<RecipeDef>> RecipesByPayload = new Dictionary<ThingDef, List<RecipeDef>>();
         private static readonly Dictionary<RecipeDef, ExtractionRecipeData> ExtractionRecipes = new Dictionary<RecipeDef, ExtractionRecipeData>();
+        private static readonly HashSet<ThingDef> ExtractableContainerDefs = new HashSet<ThingDef>();
+        private static readonly Dictionary<ThingDef, Dictionary<ThingDef, List<RecipeDef>>> FilteredRecipesByContainerAndPayload = new Dictionary<ThingDef, Dictionary<ThingDef, List<RecipeDef>>>();
         private static readonly System.Reflection.FieldInfo AllRecipesCachedField = AccessTools.Field(typeof(ThingDef), "allRecipesCached");
+        private static bool missingRecipeCacheFieldLogged;
+
+        public static bool CanFilterRecipeLists => AllRecipesCachedField != null;
+
+        public static bool TryGetExtractableComp(Thing thing, out CompExtractableContainer extractableComp)
+        {
+            extractableComp = null;
+            if (thing?.def == null || !ExtractableContainerDefs.Contains(thing.def))
+            {
+                return false;
+            }
+
+            extractableComp = thing.TryGetComp<CompExtractableContainer>();
+            return extractableComp != null;
+        }
 
         public static bool IsExtractionRecipe(RecipeDef recipeDef)
         {
@@ -416,7 +495,7 @@ namespace CargoContainersExpanded
 
         public static List<RecipeDef> GetAllowedExtractionRecipes(Thing billGiverThing)
         {
-            var extractableComp = billGiverThing?.TryGetComp<CompExtractableContainer>();
+            TryGetExtractableComp(billGiverThing, out CompExtractableContainer extractableComp);
             ThingDef payloadDef = extractableComp?.PayloadDef;
             return RecipesFor(payloadDef);
         }
@@ -451,13 +530,26 @@ namespace CargoContainersExpanded
 
         public static List<RecipeDef> GetRecipesForBillGiver(Thing billGiverThing)
         {
-            List<RecipeDef> originalRecipes = billGiverThing?.def?.recipes;
-            if (originalRecipes == null)
+            ThingDef containerDef = billGiverThing?.def;
+            List<RecipeDef> originalRecipes = containerDef?.recipes;
+            if (originalRecipes == null || !TryGetExtractableComp(billGiverThing, out CompExtractableContainer extractableComp))
             {
                 return null;
             }
 
-            List<RecipeDef> allowedRecipes = GetAllowedExtractionRecipes(billGiverThing);
+            ThingDef payloadDef = extractableComp.PayloadDef;
+            if (!FilteredRecipesByContainerAndPayload.TryGetValue(containerDef, out Dictionary<ThingDef, List<RecipeDef>> byPayload))
+            {
+                byPayload = new Dictionary<ThingDef, List<RecipeDef>>();
+                FilteredRecipesByContainerAndPayload[containerDef] = byPayload;
+            }
+
+            if (payloadDef != null && byPayload.TryGetValue(payloadDef, out List<RecipeDef> cachedRecipes))
+            {
+                return cachedRecipes;
+            }
+
+            List<RecipeDef> allowedRecipes = RecipesFor(payloadDef);
             var filteredRecipes = new List<RecipeDef>(originalRecipes.Count);
             foreach (RecipeDef recipeDef in originalRecipes)
             {
@@ -465,6 +557,12 @@ namespace CargoContainersExpanded
                 {
                     filteredRecipes.Add(recipeDef);
                 }
+            }
+
+            filteredRecipes = DistinctRecipes(filteredRecipes);
+            if (payloadDef != null)
+            {
+                byPayload[payloadDef] = filteredRecipes;
             }
 
             return filteredRecipes;
@@ -475,6 +573,10 @@ namespace CargoContainersExpanded
             try
             {
                 var extractableContainers = GetExtractableContainers();
+                ExtractableContainerDefs.Clear();
+                ExtractableContainerDefs.UnionWith(extractableContainers);
+                FilteredRecipesByContainerAndPayload.Clear();
+                VerifyRecipeCacheField();
                 var payloadDefs = GetPayloadDefs(extractableContainers);
                 EnsureRecipes(payloadDefs);
                 AttachRecipesToContainers(extractableContainers);
@@ -484,6 +586,17 @@ namespace CargoContainersExpanded
             {
                 Log.Error($"Cargo Containers Expanded: failed to configure cargo extraction.\n{exception}");
             }
+        }
+
+        private static void VerifyRecipeCacheField()
+        {
+            if (AllRecipesCachedField != null || missingRecipeCacheFieldLogged)
+            {
+                return;
+            }
+
+            missingRecipeCacheFieldLogged = true;
+            Log.Error("Cargo Containers Expanded: ThingDef.allRecipesCached is unavailable. Extraction recipe menus will remain unfiltered for compatibility, while invalid bills will still be rejected when added.");
         }
 
         private static List<ThingDef> GetExtractableContainers()
@@ -782,7 +895,7 @@ namespace CargoContainersExpanded
                 return;
             }
 
-            var extractableComp = billGiver.AsThing()?.TryGetComp<CompExtractableContainer>();
+            CargoExtractionUtility.TryGetExtractableComp(billGiver.AsThing(), out CompExtractableContainer extractableComp);
             if (extractableComp == null)
             {
                 __result = Enumerable.Empty<Thing>();
@@ -862,19 +975,6 @@ namespace CargoContainersExpanded
         }
     }
 
-    [HarmonyPatch(typeof(Thing), nameof(Thing.MarketValue), MethodType.Getter)]
-    public static class Thing_MarketValue_ExtractCargoPatch
-    {
-        public static void Postfix(Thing __instance, ref float __result)
-        {
-            CompExtractableContainer extractableComp = __instance?.TryGetComp<CompExtractableContainer>();
-            if (extractableComp != null && extractableComp.TryGetContainerMarketValue(out float marketValue))
-            {
-                __result = marketValue;
-            }
-        }
-    }
-
     [HarmonyPatch(typeof(StatExtension), nameof(StatExtension.GetStatValue))]
     public static class StatExtension_GetStatValue_ExtractCargoPatch
     {
@@ -885,22 +985,14 @@ namespace CargoContainersExpanded
                 return;
             }
 
-            CompExtractableContainer extractableComp = thing?.TryGetComp<CompExtractableContainer>();
+            if (!CargoExtractionUtility.TryGetExtractableComp(thing, out CompExtractableContainer extractableComp))
+            {
+                return;
+            }
+
             if (extractableComp != null && extractableComp.TryGetContainerMarketValue(out float marketValue))
             {
                 __result = marketValue;
-            }
-        }
-    }
-
-    [HarmonyPatch(typeof(Building_WorkTable), nameof(Building_WorkTable.CurrentlyUsableForBills))]
-    public static class BuildingWorkTable_CurrentlyUsableForBills_ExtractCargoPatch
-    {
-        public static void Postfix(Building_WorkTable __instance, ref bool __result)
-        {
-            if (CargoExtractionPowerBypass.IsExtractableContainerWithPayload(__instance))
-            {
-                __result = true;
             }
         }
     }
@@ -916,7 +1008,7 @@ namespace CargoContainersExpanded
 
         public static bool IsExtractableContainerWithPayload(Thing thing)
         {
-            var extractableComp = thing?.TryGetComp<CompExtractableContainer>();
+            CargoExtractionUtility.TryGetExtractableComp(thing, out CompExtractableContainer extractableComp);
             return extractableComp != null && extractableComp.HasPayload;
         }
 
@@ -983,8 +1075,9 @@ namespace CargoContainersExpanded
         {
             var billGiver = GetBillGiver(__instance);
             Thing billGiverThing = billGiver?.AsThing();
-            var extractableComp = billGiverThing?.TryGetComp<CompExtractableContainer>();
-            if (extractableComp == null || recipeOptionsMaker == null)
+            if (!CargoExtractionUtility.CanFilterRecipeLists ||
+                !CargoExtractionUtility.TryGetExtractableComp(billGiverThing, out _) ||
+                recipeOptionsMaker == null)
             {
                 return;
             }
@@ -1005,6 +1098,8 @@ namespace CargoContainersExpanded
     [HarmonyPatch(typeof(BillStack), nameof(BillStack.AddBill))]
     public static class BillStack_AddBill_ExtractCargoPatch
     {
+        private static readonly HashSet<string> LoggedRejectedBills = new HashSet<string>();
+
         public static bool Prefix(BillStack __instance, Bill bill)
         {
             RecipeDef recipeDef = bill?.recipe;
@@ -1020,17 +1115,26 @@ namespace CargoContainersExpanded
                 return true;
             }
 
-            ThingDef payloadDef = billGiverThing?.TryGetComp<CompExtractableContainer>()?.PayloadDef;
-            Log.Warning(
-                $"Cargo Containers Expanded: rejected invalid extraction bill {recipeDef?.defName ?? "null"} " +
-                $"for {billGiverThing?.def?.defName ?? "unknown bill giver"} " +
-                $"with payload {payloadDef?.defName ?? "none"}.");
+            CargoExtractionUtility.TryGetExtractableComp(billGiverThing, out CompExtractableContainer extractableComp);
+            ThingDef payloadDef = extractableComp?.PayloadDef;
+            string rejectionKey = $"{recipeDef?.defName ?? "null"}|{billGiverThing?.def?.defName ?? "unknown"}|{payloadDef?.defName ?? "none"}";
+            if (LoggedRejectedBills.Add(rejectionKey))
+            {
+                Log.Warning(
+                    $"Cargo Containers Expanded: rejected invalid extraction bill {recipeDef?.defName ?? "null"} " +
+                    $"for {billGiverThing?.def?.defName ?? "unknown bill giver"} " +
+                    $"with payload {payloadDef?.defName ?? "none"}.");
+            }
+
             return false;
         }
     }
 
     public class RecipeListState
     {
+        [ThreadStatic]
+        private static HashSet<ThingDef> activeThingDefs;
+
         private readonly ThingDef thingDef;
         private readonly List<RecipeDef> recipes;
         private readonly List<RecipeDef> allRecipesCached;
@@ -1046,24 +1150,41 @@ namespace CargoContainersExpanded
         {
             ThingDef thingDef = billGiverThing?.def;
             List<RecipeDef> originalRecipes = thingDef?.recipes;
-            if (thingDef == null || originalRecipes == null)
+            if (!CargoExtractionUtility.CanFilterRecipeLists || thingDef == null || originalRecipes == null)
             {
                 return action();
             }
 
-            List<RecipeDef> filteredRecipes = CargoExtractionUtility.DistinctRecipes(CargoExtractionUtility.GetRecipesForBillGiver(billGiverThing));
-            List<RecipeDef> originalAllRecipesCached = CargoExtractionUtility.GetAllRecipesCached(thingDef);
-            List<RecipeDef> filteredAllRecipes = CargoExtractionUtility.DistinctRecipes(filteredRecipes);
-            var state = new RecipeListState(thingDef, originalRecipes, originalAllRecipesCached);
-            thingDef.recipes = filteredRecipes;
-            CargoExtractionUtility.SetAllRecipesCached(thingDef, filteredAllRecipes);
-            try
+            activeThingDefs ??= new HashSet<ThingDef>();
+            if (!activeThingDefs.Add(thingDef))
             {
                 return action();
             }
+
+            try
+            {
+                List<RecipeDef> filteredRecipes = CargoExtractionUtility.GetRecipesForBillGiver(billGiverThing);
+                if (filteredRecipes == null)
+                {
+                    return action();
+                }
+
+                List<RecipeDef> originalAllRecipesCached = CargoExtractionUtility.GetAllRecipesCached(thingDef);
+                var state = new RecipeListState(thingDef, originalRecipes, originalAllRecipesCached);
+                thingDef.recipes = filteredRecipes;
+                try
+                {
+                    CargoExtractionUtility.SetAllRecipesCached(thingDef, filteredRecipes);
+                    return action();
+                }
+                finally
+                {
+                    state.Restore();
+                }
+            }
             finally
             {
-                state.Restore();
+                activeThingDefs.Remove(thingDef);
             }
         }
 

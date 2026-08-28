@@ -8,37 +8,20 @@
     <Nullable>disable</Nullable>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <DebugType>none</DebugType>
+    <DebugSymbols>false</DebugSymbols>
+    <Deterministic>true</Deterministic>
+    <ContinuousIntegrationBuild Condition="'$(CI)' == 'true'">true</ContinuousIntegrationBuild>
+    <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
+    <RestoreLockedMode Condition="'$(CI)' == 'true'">true</RestoreLockedMode>
+    <CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies>
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
-    <RimWorldInstallDir Condition="'$(RimWorldInstallDir)' == ''">E:\Steam\steamapps\common\RimWorld</RimWorldInstallDir>
-    <HarmonyWorkshopDir Condition="'$(HarmonyWorkshopDir)' == ''">E:\Steam\steamapps\workshop\content\294100\2009463077\Current</HarmonyWorkshopDir>
     <OutputPath>..\Assemblies\</OutputPath>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Assembly-CSharp">
-      <HintPath>$(RimWorldInstallDir)\RimWorldWin64_Data\Managed\Assembly-CSharp.dll</HintPath>
-      <Private>false</Private>
-    </Reference>
-    <Reference Include="0Harmony">
-      <HintPath>$(HarmonyWorkshopDir)\Assemblies\0Harmony.dll</HintPath>
-      <Private>false</Private>
-    </Reference>
-    <Reference Include="UnityEngine.CoreModule">
-      <HintPath>$(RimWorldInstallDir)\RimWorldWin64_Data\Managed\UnityEngine.CoreModule.dll</HintPath>
-      <Private>false</Private>
-    </Reference>
-    <Reference Include="UnityEngine.IMGUIModule">
-      <HintPath>$(RimWorldInstallDir)\RimWorldWin64_Data\Managed\UnityEngine.IMGUIModule.dll</HintPath>
-      <Private>false</Private>
-    </Reference>
-    <Reference Include="UnityEngine.TextRenderingModule">
-      <HintPath>$(RimWorldInstallDir)\RimWorldWin64_Data\Managed\UnityEngine.TextRenderingModule.dll</HintPath>
-      <Private>false</Private>
-    </Reference>
-    <Reference Include="UnityEngine.UIModule">
-      <HintPath>$(RimWorldInstallDir)\RimWorldWin64_Data\Managed\UnityEngine.UIModule.dll</HintPath>
-      <Private>false</Private>
-    </Reference>
+    <PackageReference Include="Krafs.Rimworld.Ref" Version="1.6.4871" PrivateAssets="all" ExcludeAssets="runtime" />
+    <PackageReference Include="Lib.Harmony.Ref" Version="2.4.2" PrivateAssets="all" ExcludeAssets="runtime" />
+    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies.net472" Version="1.0.3" PrivateAssets="all" ExcludeAssets="runtime" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="bootstrap.cs" />

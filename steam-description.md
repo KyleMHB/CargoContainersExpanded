@@ -1,47 +1,50 @@
-[h1]Description of Mod[/h1]
-[b]Cargo Containers Expanded[/b] is a maintained RimWorld 1.6 fork of AOBA's cargo container mod. It turns large stockpiles into buildable containers and tanks that store a payload inside the building itself.
+[h1]Cargo Containers Expanded[/h1]
+
+[b]Cargo Containers Expanded[/b] is a maintained RimWorld 1.6 fork of AOBA's Cargo Container mod. It replaces the original mod. Do not enable both mods together.
+
+[h1]Requirements[/h1]
+[list]
+[*]RimWorld 1.6
+[*]Harmony
+[/list]
 
 [h1]Features[/h1]
 [list]
-[*][b]Stuffable Resource Containers:[/b] Store metallic, woody, stony, fabric, and leathery resources.
-[*][b]Half-Size Containers:[/b] Use smaller containers when you do not need full-size storage.
-[*][b]Fixed-Payload Containers:[/b] Store survival meals, medicine, drugs, beer, neutroamine, wort, and chemfuel.
-[*][b]Extraction Bills:[/b] Pull payload out in batches of 1, 25, or 100.
-[*][b]Clean Refunds:[/b] Deconstruction returns remaining payloads and frame materials without losing stored value.
-[*][b]Refrigerated Storage:[/b] Keep rottable payloads preserved while the container has power.
-[*][b]Payload Value Tracking:[/b] Container wealth reflects the remaining stored resources.
-[*][b]Localized Text:[/b] Includes localized inspect and recipe text.
+[*][b]Stuffable containers:[/b] Full and half containers for metallic, woody, stony, fabric, and leathery resources.
+[*][b]Fixed payload tanks and containers:[/b] Survival meals, medicine, drugs, beer, neutroamine, wort, and chemfuel.
+[*][b]Extraction bills:[/b] Extract payload in batches of 1, 25, or 100, with exact final partial batches.
+[*][b]Safe refunds:[/b] Clean deconstruction returns remaining payload and frame materials.
+[*][b]Refrigeration:[/b] Powered refrigeration pauses rot. Without power, payload takes twice as long to rot as the same loose item.
+[*][b]Intentional wealth balance:[/b] Stored payload contributes 10% of its loose-item market value, decreasing as items are extracted.
 [/list]
 
-[h1]How to Use[/h1]
-Place cargo containers like any other building. Their contents are stored as an internal payload, and you extract items later by using the container bills.
+[h1]Compatibility and localization[/h1]
 
-Refrigerated containers require power. If power is lost, the payload can rot based on the stored item and surrounding temperature.
+The mod declares AOBA's original package incompatible because this fork replaces it. Harmony is the only required mod.
 
-[h1]Compatibilities[/h1]
+English is complete. Simplified and Traditional Chinese retain translations for legacy container definitions. New extraction and refrigeration UI falls back to English, so Chinese support is partial.
+
+[h1]Credits and provenance[/h1]
+
+Original mod by AOBA. Current maintained fork by KyleMHB. Fork-authored code and contributions use a scoped MIT notice. Inherited upstream definitions and artwork are not claimed to be MIT-licensed because the original permission and licensing terms are unknown.
+
 [list]
-[*][b]Supported RimWorld version:[/b] 1.6.
-[*][b]Required mod:[/b] Harmony.
-[*][b]Power use:[/b] Refrigerated containers require power for active preservation.
-[*][b]Safety notes:[/b] Chemfuel containers are dangerous if destroyed.
+[*][url=https://github.com/KyleMHB/CargoContainersExpanded]Source repository[/url]
+[*][url=https://github.com/KyleMHB/CargoContainersExpanded/issues]Issue tracker[/url]
+[*][url=https://steamcommunity.com/sharedfiles/filedetails/?id=2725808118]Original Workshop item[/url]
 [/list]
 
-[h1]Settings / Setup Instructions[/h1]
-The mod uses its own bill options and the normal RimWorld building flow. No separate settings menu is required for basic use.
+[h1]License and Forking Policy[/h1]
 
-[hr][/hr]
+Fork-authored code and contributions use the scoped MIT notice in the source repository. Inherited upstream definitions and artwork retain their separate, currently unknown provenance.
 
-[h1]Credits / Fork History[/h1]
-This is a maintained fork of AOBA's original cargo container mod. The fork exists to keep the mod working on RimWorld 1.6 and to improve payload handling, refrigeration behavior, and deconstruction refunds.
+[b]Forking Policy:[/b] If your fork primarily consists of bug fixes or feature additions that align with the core vision of this mod, I reserve the right to request that your changes be submitted as a pull request to my existing codebase rather than being published as a completely separate standalone release.
 
-[h1]License & Forking Policy[/h1]
-This project inherits the original mod's license.
+This is a project request, not an additional license restriction.
 
-[b]Forking Policy:[/b] If your fork primarily consists of bug fixes or feature additions that align with the core vision of this project, I reserve the right to request that your changes be submitted as a Pull Request to this existing codebase rather than being published as a completely separate standalone release.
+[h1]Links[/h1]
 
-[h1]Reference links to other mods[/h1]
-[list]
-[*][url=https://github.com/KyleMHB/CargoContainersExpanded]Source Repository[/url]
-[*][url=https://github.com/KyleMHB/CargoContainersExpanded/issues]Issue Tracker[/url]
-[*][url=https://steamcommunity.com/sharedfiles/filedetails/?id=2725808118]Original Steam Workshop mod[/url]
-[/list]
+Support KyleMHB's ongoing maintenance of this fork. This does not imply endorsement by the original authors.
+
+[url=https://ko-fi.com/I7L525WMJ6][img]https://img.shields.io/badge/Support_me_on_Ko--fi-72a4f2?style=for-the-badge&logo=kofi&logoColor=white[/img][/url]
+[url=https://github.com/KyleMHB/CargoContainersExpanded][img]https://img.shields.io/badge/GitHub-Repository-181717?style=for-the-badge&logo=github&logoColor=white[/img][/url]

@@ -24,7 +24,13 @@ Keep Harmony loaded before Cargo Containers Expanded. Do not enable the original
 
 ## Save compatibility
 
-Existing RimWorld 1.6 saves retain their payload count, rot progress, bills, pending final extraction state, and serialized field keys. Package IDs, container Def names, generated recipe Def names, payload counts, extraction batches, and work amounts are unchanged.
+The implementation preserves the existing payload count, rot progress, bills, pending final extraction state, and serialized field keys. Package IDs, container Def names, generated recipe Def names, payload counts, extraction batches, and work amounts are unchanged. Existing-save compatibility remains subject to the focused in-game verification recorded in `TESTING.md`.
+
+## How to use
+
+Build a resource container using the material you want it to hold, or select one of the fixed-payload containers or tanks. Select the completed container and add an extraction bill for 1, 25, or 100 items. If fewer items remain than the selected batch, the final extraction returns the exact remaining amount.
+
+Refrigerated containers use a rottable resource as their construction material and stored payload. Power pauses payload rot; without power, the payload continues aging under the intentional 2x rot-duration rule.
 
 ## Localization
 
@@ -52,11 +58,10 @@ Contributions, issues, and feature requests are welcome. Fork-authored code and 
 ## Links and credits
 
 
-Support KyleMHB's ongoing maintenance of this fork. This does not imply endorsement by the original authors.
+Support me on Ko-fi. This does not imply endorsement by the original authors.
 
 [![Support me on Ko-fi](https://img.shields.io/badge/Support_me_on_Ko--fi-72a4f2?style=for-the-badge&logo=kofi&logoColor=white)](https://ko-fi.com/I7L525WMJ6)
 [![GitHub Repository](https://img.shields.io/badge/GitHub-Repository-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/KyleMHB/CargoContainersExpanded)
-- Source repository: <https://github.com/KyleMHB/CargoContainersExpanded>
 - Issue tracker: <https://github.com/KyleMHB/CargoContainersExpanded/issues>
 - Original Workshop item: <https://steamcommunity.com/sharedfiles/filedetails/?id=2725808118>
 - Original mod by AOBA; maintained fork by KyleMHB.

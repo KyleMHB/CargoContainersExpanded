@@ -1,5 +1,8 @@
 .dotnet/
 Source/obj/
+TestResults/
+Tests/bin/
+Tests/obj/
 bin/
 *.pdb
 *~

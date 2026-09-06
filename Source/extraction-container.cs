@@ -123,8 +123,6 @@ namespace CargoContainersExpanded
 
     public class CompExtractableContainer : ThingComp
     {
-        // Intentional balance rule: stored payload contributes ten percent of its loose-item wealth.
-        private const float StoredPayloadMarketValueFactor = 0.1f;
         private bool initialized;
         private bool destroyWhenIterationCompletes;
         private int remainingPayloadCount;
@@ -206,60 +204,29 @@ namespace CargoContainersExpanded
 
         public bool TryGetContainerMarketValue(out float marketValue)
         {
-            InitializeIfNeeded();
-
-            ThingDef payloadDef = PayloadDef;
-            int remainingCount = RemainingPayloadCount;
-            if (remainingCount <= 0)
-            {
-                marketValue = 0f;
-                return true;
-            }
-
-            if (payloadDef == null)
-            {
-                marketValue = 0f;
-                return false;
-            }
-
-            float payloadMarketValue = payloadDef.BaseMarketValue;
-            if (payloadMarketValue <= 0f || float.IsNaN(payloadMarketValue) || float.IsInfinity(payloadMarketValue))
-            {
-                marketValue = 0f;
-                return false;
-            }
-
-            marketValue = payloadMarketValue * remainingCount * StoredPayloadMarketValueFactor;
-            return true;
+            PayloadAccount account = OpenPayloadAccount();
+            ApplyPayloadSnapshot(account.Snapshot);
+            return account.TryGetStoredMarketValue(out marketValue);
         }
 
         public int TakePayload(int requestedCount)
         {
-            InitializeIfNeeded();
-            if (requestedCount <= 0 || remainingPayloadCount <= 0)
-            {
-                return 0;
-            }
-
-            int takenCount = Math.Min(requestedCount, remainingPayloadCount);
-            remainingPayloadCount -= takenCount;
-            if (remainingPayloadCount <= 0)
-            {
-                remainingPayloadCount = 0;
-                destroyWhenIterationCompletes = true;
-            }
-
-            return takenCount;
+            PayloadAccount account = OpenPayloadAccount();
+            PayloadWithdrawal withdrawal = account.Withdraw(requestedCount);
+            ApplyPayloadSnapshot(account.Snapshot);
+            return withdrawal.TakenCount;
         }
 
         public void CompleteExtractionIteration()
         {
-            if (!destroyWhenIterationCompletes || parent == null || parent.Destroyed)
+            PayloadAccount account = OpenPayloadAccount();
+            bool hostCanFinalize = parent != null && !parent.Destroyed;
+            if (!account.TryConsumeFinalizationRequest(hostCanFinalize))
             {
                 return;
             }
 
-            destroyWhenIterationCompletes = false;
+            ApplyPayloadSnapshot(account.Snapshot);
             parent.Destroy(DestroyMode.Deconstruct);
         }
 
@@ -269,16 +236,9 @@ namespace CargoContainersExpanded
             error = null;
             try
             {
-                foreach (ThingDefCountClass refund in GetFrameRefunds())
-                {
-                    PrepareStacks(refund.thingDef, refund.count, preparedRefunds);
-                }
-
-                ThingDef payloadDef = PayloadDef;
-                if (payloadDef != null && RemainingPayloadCount > 0)
-                {
-                    PrepareStacks(payloadDef, RemainingPayloadCount, preparedRefunds);
-                }
+                InitializeIfNeeded();
+                PayloadAccount account = OpenPayloadAccount();
+                PrepareRefundPlan(account.PlanRefunds(GetFrameRefundFacts().ToList()), preparedRefunds);
 
                 return true;
             }
@@ -330,14 +290,46 @@ namespace CargoContainersExpanded
 
         private void InitializeIfNeeded()
         {
-            if (initialized)
+            PayloadAccount account = OpenPayloadAccount();
+            ApplyPayloadSnapshot(account.Snapshot);
+        }
+
+        private PayloadAccount OpenPayloadAccount()
+        {
+            ThingDef payloadDef = PayloadDef;
+            return PayloadAccount.Open(
+                new PayloadProfile(
+                    payloadDef?.defName,
+                    MaxPayloadCount,
+                    payloadDef?.BaseMarketValue ?? 0f,
+                    PropsExtractable?.fixedPayloadDef?.defName,
+                    payloadDef?.stackLimit ?? 1),
+                new PayloadSaveState(
+                    initialized,
+                    destroyWhenIterationCompletes,
+                    remainingPayloadCount));
+        }
+
+        private void ApplyPayloadSnapshot(PayloadSnapshot snapshot)
+        {
+            if (snapshot == null)
             {
-                remainingPayloadCount = Math.Min(Math.Max(remainingPayloadCount, 0), Math.Max(MaxPayloadCount, 0));
                 return;
             }
 
-            remainingPayloadCount = Math.Max(MaxPayloadCount, 0);
-            initialized = true;
+            initialized = snapshot.Initialized;
+            destroyWhenIterationCompletes = snapshot.DestroyWhenIterationCompletes;
+            remainingPayloadCount = snapshot.RemainingPayloadCount;
+        }
+
+        internal PayloadAccount OpenPayloadAccountForHost()
+        {
+            return OpenPayloadAccount();
+        }
+
+        internal void ApplyPayloadSnapshotForHost(PayloadSnapshot snapshot)
+        {
+            ApplyPayloadSnapshot(snapshot);
         }
 
         private void RemoveInvalidExtractionBills()
@@ -359,7 +351,7 @@ namespace CargoContainersExpanded
             }
         }
 
-        private IEnumerable<ThingDefCountClass> GetFrameRefunds()
+        private IEnumerable<RefundIngredientFacts> GetFrameRefundFacts()
         {
             var costs = parent?.def?.costList;
             if (costs == null)
@@ -367,39 +359,59 @@ namespace CargoContainersExpanded
                 yield break;
             }
 
-            ThingDef fixedPayloadDef = PropsExtractable.fixedPayloadDef;
             foreach (ThingDefCountClass cost in costs)
             {
-                if (cost?.thingDef == null || cost.count <= 0)
+                if (cost?.thingDef == null)
                 {
                     continue;
                 }
 
-                if (fixedPayloadDef != null && cost.thingDef == fixedPayloadDef)
-                {
-                    continue;
-                }
-
-                yield return cost;
+                yield return new RefundIngredientFacts(
+                    cost.thingDef.defName,
+                    cost.count,
+                    cost.thingDef.stackLimit);
             }
         }
 
-        private static void PrepareStacks(ThingDef thingDef, int count, List<Thing> preparedRefunds)
+        private static void PrepareRefundPlan(RefundPlan plan, List<Thing> preparedRefunds)
         {
-            if (thingDef == null || count <= 0)
+            string error;
+            if (!PayloadRefundMaterialization.TryPrepare(
+                plan,
+                MaterializeRefundStack,
+                DestroyPreparedRefund,
+                preparedRefunds,
+                out error))
             {
-                return;
+                throw new InvalidOperationException(error);
+            }
+        }
+
+        private static Thing MaterializeRefundStack(RefundStackPlan entry)
+        {
+            ThingDef thingDef = DefDatabase<ThingDef>.GetNamedSilentFail(entry.DefName);
+            if (thingDef == null)
+            {
+                throw new InvalidOperationException(
+                    "Cargo Containers Expanded: refund Def was not found: " + entry.DefName);
             }
 
-            int stackLimit = Math.Max(thingDef.stackLimit, 1);
-            int remainingCount = count;
-            while (remainingCount > 0)
+            Thing stack = ThingMaker.MakeThing(thingDef);
+            if (stack == null)
             {
-                int stackCount = Math.Min(remainingCount, stackLimit);
-                Thing stack = ThingMaker.MakeThing(thingDef);
-                stack.stackCount = stackCount;
-                preparedRefunds.Add(stack);
-                remainingCount -= stackCount;
+                throw new InvalidOperationException(
+                    "Cargo Containers Expanded: refund Thing could not be created: " + entry.DefName);
+            }
+
+            stack.stackCount = entry.Count;
+            return stack;
+        }
+
+        private static void DestroyPreparedRefund(Thing stack)
+        {
+            if (stack != null && !stack.Destroyed && !stack.Spawned)
+            {
+                stack.Destroy(DestroyMode.Vanish);
             }
         }
     }
@@ -431,26 +443,398 @@ namespace CargoContainersExpanded
         }
     }
 
+    // The catalog consumes immutable Def-name facts. This adapter is the only place where those
+    // facts are read from RimWorld's mutable DefDatabase objects.
+    internal readonly struct ExtractionRecipeData
+    {
+        public readonly ThingDef PayloadDef;
+        public readonly int BatchCount;
+        public readonly bool IsLegacy;
+
+        public ExtractionRecipeData(ThingDef payloadDef, int batchCount, bool isLegacy)
+        {
+            PayloadDef = payloadDef;
+            BatchCount = batchCount;
+            IsLegacy = isLegacy;
+        }
+    }
+
+    internal sealed class RimWorldExtractionRecipeCatalogAdapter
+    {
+        private readonly Dictionary<ThingDef, List<RecipeDef>> recipesByPayload = new Dictionary<ThingDef, List<RecipeDef>>();
+        private readonly Dictionary<RecipeDef, ExtractionRecipeData> extractionRecipes = new Dictionary<RecipeDef, ExtractionRecipeData>();
+        private readonly Dictionary<string, RecipeDef> recipeDefsByName = new Dictionary<string, RecipeDef>(StringComparer.Ordinal);
+        private readonly ExtractionRecipeMappingRegistry recipeMappings = new ExtractionRecipeMappingRegistry();
+        private readonly System.Reflection.FieldInfo allRecipesCachedField = RimWorldRecipeListHost.AllRecipesCachedField;
+        private bool missingRecipeCacheFieldLogged;
+
+        public bool CanFilterRecipeLists => RimWorldRecipeListHost.CanFilterRecipeLists;
+
+        public ExtractionRecipeCatalog BuildCatalog(
+            out List<ThingDef> extractableContainers,
+            out Dictionary<string, ThingDef> payloadDefsByName)
+        {
+            var allThingDefs = new List<ThingDef>(DefDatabase<ThingDef>.AllDefsListForReading);
+            extractableContainers = new List<ThingDef>();
+            foreach (ThingDef thingDef in allThingDefs)
+            {
+                if (thingDef?.GetCompProperties<CompProperties_ExtractableContainer>() != null)
+                {
+                    extractableContainers.Add(thingDef);
+                }
+            }
+
+            var containerFacts = new List<ExtractionContainerFacts>();
+            foreach (ThingDef containerDef in extractableContainers)
+            {
+                CompProperties_ExtractableContainer props = containerDef.GetCompProperties<CompProperties_ExtractableContainer>();
+                containerFacts.Add(new ExtractionContainerFacts(
+                    containerDef.defName,
+                    props?.fixedPayloadDef?.defName,
+                    CategoryNames(containerDef.stuffCategories)));
+            }
+
+            var fixedPayloadNames = new HashSet<string>(StringComparer.Ordinal);
+            foreach (ExtractionContainerFacts container in containerFacts)
+            {
+                if (!string.IsNullOrEmpty(container.FixedPayloadDefName))
+                {
+                    fixedPayloadNames.Add(container.FixedPayloadDefName);
+                }
+            }
+
+            var payloadFacts = new List<ExtractionPayloadFacts>();
+            payloadDefsByName = new Dictionary<string, ThingDef>(StringComparer.Ordinal);
+            foreach (ThingDef payloadDef in allThingDefs)
+            {
+                if (payloadDef == null || string.IsNullOrEmpty(payloadDef.defName))
+                {
+                    continue;
+                }
+
+                bool isFixedPayload = fixedPayloadNames.Contains(payloadDef.defName);
+                bool isStuffPayload = false;
+                foreach (ExtractionContainerFacts container in containerFacts)
+                {
+                    if (string.IsNullOrEmpty(container.FixedPayloadDefName) &&
+                        SharesCategory(payloadDef, container.StuffCategoryDefNames))
+                    {
+                        isStuffPayload = true;
+                        break;
+                    }
+                }
+
+                if (!isFixedPayload && !isStuffPayload)
+                {
+                    continue;
+                }
+
+                payloadDefsByName[payloadDef.defName] = payloadDef;
+                payloadFacts.Add(new ExtractionPayloadFacts(
+                    payloadDef.defName,
+                    CategoryNames(payloadDef.stuffProps?.categories)));
+            }
+
+            var existingRecipeNames = new List<string>();
+            foreach (RecipeDef recipeDef in DefDatabase<RecipeDef>.AllDefsListForReading)
+            {
+                existingRecipeNames.Add(recipeDef?.defName);
+            }
+
+            return ExtractionRecipeCatalog.Build(payloadFacts, containerFacts, existingRecipeNames);
+        }
+
+        public void Apply(
+            ExtractionRecipeCatalog catalog,
+            IReadOnlyList<ThingDef> extractableContainers,
+            IReadOnlyDictionary<string, ThingDef> payloadDefsByName)
+        {
+            recipesByPayload.Clear();
+            extractionRecipes.Clear();
+            recipeDefsByName.Clear();
+            recipeMappings.Clear();
+            VerifyRecipeCacheField();
+            EnsureRecipes(catalog, payloadDefsByName);
+            AttachRecipesToContainers(catalog, extractableContainers);
+            RegisterLegacyMappings(payloadDefsByName);
+            ConfigureWorkGiver(extractableContainers);
+        }
+
+        public bool TryGetRecipeData(RecipeDef recipeDef, out ExtractionRecipeData recipeData)
+        {
+            return extractionRecipes.TryGetValue(recipeDef, out recipeData);
+        }
+
+        public List<RecipeDef> RecipesFor(ThingDef payloadDef, ExtractionRecipeCatalog catalog)
+        {
+            if (payloadDef == null || catalog == null)
+            {
+                return null;
+            }
+
+            IReadOnlyList<string> recipeNames = catalog.RecipeNamesForPayload(payloadDef.defName);
+            if (recipeNames == null)
+            {
+                return null;
+            }
+
+            var recipeDefs = new List<RecipeDef>();
+            foreach (string recipeName in recipeNames)
+            {
+                RecipeDef recipeDef = DefDatabase<RecipeDef>.GetNamedSilentFail(recipeName);
+                if (recipeDef != null)
+                {
+                    recipeDefs.Add(recipeDef);
+                }
+            }
+
+            return recipeDefs;
+        }
+
+        public void ClearAllRecipesCache(ThingDef thingDef)
+        {
+            allRecipesCachedField?.SetValue(thingDef, null);
+        }
+
+        public List<RecipeDef> GetAllRecipesCached(ThingDef thingDef)
+        {
+            return allRecipesCachedField?.GetValue(thingDef) as List<RecipeDef>;
+        }
+
+        public void SetAllRecipesCached(ThingDef thingDef, List<RecipeDef> recipes)
+        {
+            allRecipesCachedField?.SetValue(thingDef, recipes);
+        }
+
+        private void VerifyRecipeCacheField()
+        {
+            if (allRecipesCachedField != null || missingRecipeCacheFieldLogged)
+            {
+                return;
+            }
+
+            missingRecipeCacheFieldLogged = true;
+            Log.Error("Cargo Containers Expanded: ThingDef.allRecipesCached is unavailable. Extraction recipe menus will remain unfiltered for compatibility, while invalid bills will still be rejected when added.");
+        }
+
+        private void EnsureRecipes(
+            ExtractionRecipeCatalog catalog,
+            IReadOnlyDictionary<string, ThingDef> payloadDefsByName)
+        {
+            foreach (ExtractionRecipeSpec spec in catalog.RecipeSpecs)
+            {
+                if (spec == null || !payloadDefsByName.TryGetValue(spec.PayloadDefName, out ThingDef payloadDef) || payloadDef == null)
+                {
+                    continue;
+                }
+
+                if (!recipesByPayload.TryGetValue(payloadDef, out List<RecipeDef> recipeDefs))
+                {
+                    recipeDefs = new List<RecipeDef>();
+                    recipesByPayload[payloadDef] = recipeDefs;
+                }
+
+                RecipeDef recipeDef = DefDatabase<RecipeDef>.GetNamedSilentFail(spec.RecipeDefName) ??
+                    CreateRecipe(spec, payloadDef);
+                if (!recipeDefs.Contains(recipeDef))
+                {
+                    recipeDefs.Add(recipeDef);
+                }
+
+                if (!recipeDefsByName.ContainsKey(spec.RecipeDefName))
+                {
+                    recipeDefsByName.Add(spec.RecipeDefName, recipeDef);
+                }
+            }
+
+            foreach (KeyValuePair<string, ThingDef> payload in payloadDefsByName)
+            {
+                string legacyRecipeDefName = ExtractionRecipeCatalog.RecipePrefix + payload.Key;
+                RecipeDef legacyRecipeDef = DefDatabase<RecipeDef>.GetNamedSilentFail(legacyRecipeDefName) ??
+                    CreateRecipe(
+                        new ExtractionRecipeSpec(legacyRecipeDefName, payload.Key, 1, 180f, true),
+                        payload.Value);
+                if (!recipeDefsByName.ContainsKey(legacyRecipeDefName))
+                {
+                    recipeDefsByName.Add(legacyRecipeDefName, legacyRecipeDef);
+                }
+            }
+        }
+
+        private void RegisterLegacyMappings(IReadOnlyDictionary<string, ThingDef> payloadDefsByName)
+        {
+            foreach (KeyValuePair<string, ThingDef> payload in payloadDefsByName)
+            {
+                string legacyRecipeDefName = ExtractionRecipeCatalog.RecipePrefix + payload.Key;
+                if (!recipeDefsByName.TryGetValue(legacyRecipeDefName, out RecipeDef legacyRecipeDef))
+                {
+                    continue;
+                }
+
+                var legacySpec = new ExtractionRecipeSpec(
+                    legacyRecipeDefName,
+                    payload.Key,
+                    1,
+                    180f,
+                    true);
+                if (recipeMappings.TryRegister(legacySpec))
+                {
+                    extractionRecipes[legacyRecipeDef] = new ExtractionRecipeData(payload.Value, 1, true);
+                }
+            }
+        }
+
+        private RecipeDef CreateRecipe(ExtractionRecipeSpec spec, ThingDef payloadDef)
+        {
+            var recipeDef = new RecipeDef
+            {
+                defName = spec.RecipeDefName,
+                label = "CCE_ExtractRecipeLabel".Translate(spec.BatchCount, payloadDef.label),
+                description = "CCE_ExtractRecipeDescription".Translate(spec.BatchCount, payloadDef.label),
+                workerClass = typeof(RecipeWorker_ExtractCargo),
+                workerCounterClass = typeof(RecipeWorkerCounter),
+                requiredGiverWorkType = WorkTypeDefOf.Crafting,
+                workAmount = spec.WorkAmount,
+                workSpeedStat = StatDefOf.GeneralLaborSpeed,
+                workTableSpeedStat = StatDefOf.WorkTableWorkSpeedFactor,
+                workSkill = SkillDefOf.Crafting,
+                ingredients = new List<IngredientCount>(),
+                products = new List<ThingDefCountClass>
+                {
+                    new ThingDefCountClass(payloadDef, spec.BatchCount)
+                },
+                recipeUsers = new List<ThingDef>(),
+                targetCountAdjustment = spec.BatchCount
+            };
+
+            DefDatabase<RecipeDef>.Add(recipeDef);
+            recipeDef.ResolveReferences();
+            return recipeDef;
+        }
+
+        private void AttachRecipesToContainers(
+            ExtractionRecipeCatalog catalog,
+            IReadOnlyList<ThingDef> containerDefs)
+        {
+            foreach (ThingDef containerDef in containerDefs)
+            {
+                containerDef.recipes ??= new List<RecipeDef>();
+                var existingRecipeNames = new List<string>();
+                foreach (RecipeDef recipeDef in containerDef.recipes)
+                {
+                    existingRecipeNames.Add(recipeDef?.defName);
+                }
+
+                ExtractionCatalogContainerApplication application = ExtractionRecipeCatalogHostExecutor.Apply(
+                    catalog,
+                    containerDef.defName,
+                    existingRecipeNames);
+                bool changed = application.Changed;
+                if (changed)
+                {
+                    containerDef.recipes.Clear();
+                    foreach (string recipeName in application.RecipeDefNames)
+                    {
+                        RecipeDef recipeDef = DefDatabase<RecipeDef>.GetNamedSilentFail(recipeName);
+                        if (recipeDef != null)
+                        {
+                            containerDef.recipes.Add(recipeDef);
+                        }
+                    }
+                }
+
+                ContainerRecipePlan plan = catalog.ContainerPlans.FirstOrDefault(candidate =>
+                    string.Equals(candidate.ContainerDefName, containerDef.defName, StringComparison.Ordinal));
+                if (plan != null)
+                {
+                    foreach (string recipeName in plan.RecipeDefNames)
+                    {
+                        RecipeDef recipeDef = DefDatabase<RecipeDef>.GetNamedSilentFail(recipeName);
+                        if (recipeDef == null)
+                        {
+                            continue;
+                        }
+
+                        ExtractionRecipeSpec spec = application.EffectiveRecipeSpecs.FirstOrDefault(candidate =>
+                            string.Equals(candidate.RecipeDefName, recipeName, StringComparison.Ordinal));
+                        if (spec != null && recipeMappings.TryRegister(spec))
+                        {
+                            extractionRecipes[recipeDef] = new ExtractionRecipeData(
+                                DefDatabase<ThingDef>.GetNamedSilentFail(spec.PayloadDefName),
+                                spec.BatchCount,
+                                spec.IsLegacy);
+                        }
+
+                        recipeDef.recipeUsers ??= new List<ThingDef>();
+                        if (recipeDef.recipeUsers.Contains(containerDef))
+                        {
+                            recipeDef.recipeUsers.Remove(containerDef);
+                        }
+                    }
+                }
+
+                if (changed)
+                {
+                    ClearAllRecipesCache(containerDef);
+                }
+            }
+        }
+
+        private static void ConfigureWorkGiver(IReadOnlyList<ThingDef> containerDefs)
+        {
+            WorkGiverDef workGiverDef = DefDatabase<WorkGiverDef>.GetNamedSilentFail("FT_DoBillsExtractCargoContainers");
+            if (workGiverDef == null)
+            {
+                Log.Error("Cargo Containers Expanded: missing extraction work giver.");
+                return;
+            }
+
+            workGiverDef.fixedBillGiverDefs = new List<ThingDef>(containerDefs);
+        }
+
+        private static IEnumerable<string> CategoryNames(IEnumerable<StuffCategoryDef> categories)
+        {
+            if (categories == null)
+            {
+                yield break;
+            }
+
+            foreach (StuffCategoryDef category in categories)
+            {
+                yield return category?.defName;
+            }
+        }
+
+        private static bool SharesCategory(ThingDef payloadDef, IReadOnlyList<string> containerCategories)
+        {
+            if (payloadDef?.stuffProps?.categories == null || containerCategories == null)
+            {
+                return false;
+            }
+
+            foreach (StuffCategoryDef payloadCategory in payloadDef.stuffProps.categories)
+            {
+                foreach (string containerCategory in containerCategories)
+                {
+                    if (string.Equals(payloadCategory?.defName, containerCategory, StringComparison.Ordinal))
+                    {
+                        return true;
+                    }
+                }
+            }
+
+            return false;
+        }
+    }
+
     public static class CargoExtractionUtility
     {
-        private const string RecipePrefix = "FT_ExtractCargo_";
-        private const float WorkAmountPerItem = 180f;
-        private static readonly int[] BatchSizes = { 1, 25, 100 };
-        private static readonly Dictionary<int, float> WorkMultipliersByBatchSize = new Dictionary<int, float>
-        {
-            { 1, 1f },
-            { 25, 3f },
-            { 100, 5f }
-        };
-
-        private static readonly Dictionary<ThingDef, List<RecipeDef>> RecipesByPayload = new Dictionary<ThingDef, List<RecipeDef>>();
-        private static readonly Dictionary<RecipeDef, ExtractionRecipeData> ExtractionRecipes = new Dictionary<RecipeDef, ExtractionRecipeData>();
+        private static readonly RimWorldExtractionRecipeCatalogAdapter catalogAdapter = new RimWorldExtractionRecipeCatalogAdapter();
         private static readonly HashSet<ThingDef> ExtractableContainerDefs = new HashSet<ThingDef>();
         private static readonly Dictionary<ThingDef, Dictionary<ThingDef, List<RecipeDef>>> FilteredRecipesByContainerAndPayload = new Dictionary<ThingDef, Dictionary<ThingDef, List<RecipeDef>>>();
-        private static readonly System.Reflection.FieldInfo AllRecipesCachedField = AccessTools.Field(typeof(ThingDef), "allRecipesCached");
-        private static bool missingRecipeCacheFieldLogged;
+        private static ExtractionRecipeCatalog extractionRecipeCatalog;
 
-        public static bool CanFilterRecipeLists => AllRecipesCachedField != null;
+        public static bool CanFilterRecipeLists => catalogAdapter.CanFilterRecipeLists;
 
         public static bool TryGetExtractableComp(Thing thing, out CompExtractableContainer extractableComp)
         {
@@ -466,20 +850,21 @@ namespace CargoContainersExpanded
 
         public static bool IsExtractionRecipe(RecipeDef recipeDef)
         {
-            return recipeDef != null && recipeDef.defName != null && recipeDef.defName.StartsWith(RecipePrefix, StringComparison.Ordinal);
+            return recipeDef != null && ExtractionRecipeCatalog.IsExtractionRecipeDefName(recipeDef.defName);
         }
 
         public static bool IsExtractionRecipeFor(RecipeDef recipeDef, ThingDef payloadDef)
         {
             return payloadDef != null &&
-                ExtractionRecipes.TryGetValue(recipeDef, out ExtractionRecipeData recipeData) &&
-                !recipeData.IsLegacy &&
-                recipeData.PayloadDef == payloadDef;
+                recipeDef != null &&
+                extractionRecipeCatalog != null &&
+                extractionRecipeCatalog.Resolve(recipeDef.defName, payloadDef.defName).IsValid &&
+                catalogAdapter.TryGetRecipeData(recipeDef, out _);
         }
 
         public static bool IsExtractionPayloadDef(ThingDef thingDef)
         {
-            return thingDef != null && RecipesByPayload.ContainsKey(thingDef);
+            return thingDef != null && extractionRecipeCatalog?.IsKnownPayload(thingDef.defName) == true;
         }
 
         public static List<RecipeDef> RecipesFor(ThingDef payloadDef)
@@ -489,8 +874,7 @@ namespace CargoContainersExpanded
                 return null;
             }
 
-            RecipesByPayload.TryGetValue(payloadDef, out List<RecipeDef> recipeDefs);
-            return recipeDefs;
+            return catalogAdapter.RecipesFor(payloadDef, extractionRecipeCatalog);
         }
 
         public static List<RecipeDef> GetAllowedExtractionRecipes(Thing billGiverThing)
@@ -518,11 +902,12 @@ namespace CargoContainersExpanded
 
         public static int BatchCountFor(RecipeDef recipeDef)
         {
-            if (recipeDef != null &&
-                ExtractionRecipes.TryGetValue(recipeDef, out ExtractionRecipeData recipeData) &&
-                !recipeData.IsLegacy)
+            if (recipeDef != null && catalogAdapter.TryGetRecipeData(recipeDef, out ExtractionRecipeData recipeData))
             {
-                return recipeData.BatchCount;
+                ExtractionRecipeResolution resolution = extractionRecipeCatalog?.Resolve(
+                    recipeDef.defName,
+                    recipeData.PayloadDef?.defName);
+                return resolution != null && resolution.IsValid ? resolution.BatchCount : 0;
             }
 
             return 0;
@@ -546,20 +931,32 @@ namespace CargoContainersExpanded
 
             if (payloadDef != null && byPayload.TryGetValue(payloadDef, out List<RecipeDef> cachedRecipes))
             {
-                return cachedRecipes;
+                return new List<RecipeDef>(cachedRecipes);
             }
 
-            List<RecipeDef> allowedRecipes = RecipesFor(payloadDef);
-            var filteredRecipes = new List<RecipeDef>(originalRecipes.Count);
-            foreach (RecipeDef recipeDef in originalRecipes)
+            if (extractionRecipeCatalog == null)
             {
-                if (!IsExtractionRecipe(recipeDef) || (allowedRecipes != null && allowedRecipes.Contains(recipeDef)))
+                // Bootstrap publishes the catalog only after a complete host application. If publication
+                // has not happened yet, keep ordinary bills visible and avoid silently emptying the menu.
+                return DistinctRecipes(originalRecipes.Where(recipeDef => !IsExtractionRecipe(recipeDef)));
+            }
+
+            IReadOnlyList<string> filteredRecipeNames = extractionRecipeCatalog.FilterRecipeDefNames(
+                payloadDef?.defName,
+                GetRecipeDefNames(originalRecipes));
+            var filteredRecipes = new List<RecipeDef>();
+            if (filteredRecipeNames != null)
+            {
+                foreach (string recipeName in filteredRecipeNames)
                 {
-                    filteredRecipes.Add(recipeDef);
+                    RecipeDef recipeDef = originalRecipes.FirstOrDefault(candidate => candidate?.defName == recipeName);
+                    if (recipeDef != null)
+                    {
+                        filteredRecipes.Add(recipeDef);
+                    }
                 }
             }
 
-            filteredRecipes = DistinctRecipes(filteredRecipes);
             if (payloadDef != null)
             {
                 byPayload[payloadDef] = filteredRecipes;
@@ -568,230 +965,36 @@ namespace CargoContainersExpanded
             return filteredRecipes;
         }
 
+        private static IEnumerable<string> GetRecipeDefNames(IEnumerable<RecipeDef> recipeDefs)
+        {
+            if (recipeDefs == null)
+            {
+                yield break;
+            }
+
+            foreach (RecipeDef recipeDef in recipeDefs)
+            {
+                yield return recipeDef?.defName;
+            }
+        }
+
         public static void ConfigureExtractionDefs()
         {
             try
             {
-                var extractableContainers = GetExtractableContainers();
+                ExtractionRecipeCatalog catalog = catalogAdapter.BuildCatalog(
+                    out List<ThingDef> extractableContainers,
+                    out Dictionary<string, ThingDef> payloadDefsByName);
+                FilteredRecipesByContainerAndPayload.Clear();
+                catalogAdapter.Apply(catalog, extractableContainers, payloadDefsByName);
                 ExtractableContainerDefs.Clear();
                 ExtractableContainerDefs.UnionWith(extractableContainers);
-                FilteredRecipesByContainerAndPayload.Clear();
-                VerifyRecipeCacheField();
-                var payloadDefs = GetPayloadDefs(extractableContainers);
-                EnsureRecipes(payloadDefs);
-                AttachRecipesToContainers(extractableContainers);
-                ConfigureWorkGiver(extractableContainers);
+                extractionRecipeCatalog = catalog;
             }
             catch (Exception exception)
             {
                 Log.Error($"Cargo Containers Expanded: failed to configure cargo extraction.\n{exception}");
             }
-        }
-
-        private static void VerifyRecipeCacheField()
-        {
-            if (AllRecipesCachedField != null || missingRecipeCacheFieldLogged)
-            {
-                return;
-            }
-
-            missingRecipeCacheFieldLogged = true;
-            Log.Error("Cargo Containers Expanded: ThingDef.allRecipesCached is unavailable. Extraction recipe menus will remain unfiltered for compatibility, while invalid bills will still be rejected when added.");
-        }
-
-        private static List<ThingDef> GetExtractableContainers()
-        {
-            var containers = new List<ThingDef>();
-            foreach (ThingDef containerDef in DefDatabase<ThingDef>.AllDefsListForReading)
-            {
-                if (containerDef?.GetCompProperties<CompProperties_ExtractableContainer>() != null)
-                {
-                    containers.Add(containerDef);
-                }
-            }
-
-            return containers;
-        }
-
-        private static HashSet<ThingDef> GetPayloadDefs(List<ThingDef> containerDefs)
-        {
-            var payloadDefs = new HashSet<ThingDef>();
-            foreach (ThingDef containerDef in containerDefs)
-            {
-                var props = containerDef.GetCompProperties<CompProperties_ExtractableContainer>();
-                if (props?.fixedPayloadDef != null)
-                {
-                    payloadDefs.Add(props.fixedPayloadDef);
-                    continue;
-                }
-
-                if (containerDef.stuffCategories == null)
-                {
-                    continue;
-                }
-
-                foreach (ThingDef thingDef in DefDatabase<ThingDef>.AllDefsListForReading)
-                {
-                    if (CanBePayloadStuff(thingDef, containerDef.stuffCategories))
-                    {
-                        payloadDefs.Add(thingDef);
-                    }
-                }
-            }
-
-            return payloadDefs;
-        }
-
-        private static bool CanBePayloadStuff(ThingDef thingDef, List<StuffCategoryDef> stuffCategories)
-        {
-            if (thingDef?.stuffProps?.categories == null)
-            {
-                return false;
-            }
-
-            foreach (StuffCategoryDef category in stuffCategories)
-            {
-                if (category != null && thingDef.stuffProps.categories.Contains(category))
-                {
-                    return true;
-                }
-            }
-
-            return false;
-        }
-
-        private static void EnsureRecipes(HashSet<ThingDef> payloadDefs)
-        {
-            foreach (ThingDef payloadDef in payloadDefs)
-            {
-                if (payloadDef == null || RecipesByPayload.ContainsKey(payloadDef))
-                {
-                    continue;
-                }
-
-                var recipeDefs = new List<RecipeDef>();
-                foreach (int batchSize in BatchSizes)
-                {
-                    string recipeDefName = RecipePrefix + payloadDef.defName + "_" + batchSize;
-                    RecipeDef recipeDef = DefDatabase<RecipeDef>.GetNamedSilentFail(recipeDefName) ?? CreateRecipe(recipeDefName, payloadDef, batchSize, false);
-                    recipeDefs.Add(recipeDef);
-                    ExtractionRecipes[recipeDef] = new ExtractionRecipeData(payloadDef, batchSize, false);
-                }
-
-                string legacyRecipeDefName = RecipePrefix + payloadDef.defName;
-                RecipeDef legacyRecipeDef = DefDatabase<RecipeDef>.GetNamedSilentFail(legacyRecipeDefName) ?? CreateRecipe(legacyRecipeDefName, payloadDef, 1, true);
-                ExtractionRecipes[legacyRecipeDef] = new ExtractionRecipeData(payloadDef, 1, true);
-                RecipesByPayload[payloadDef] = recipeDefs;
-            }
-        }
-
-        private static RecipeDef CreateRecipe(string recipeDefName, ThingDef payloadDef, int batchCount, bool isLegacy)
-        {
-            var recipeDef = new RecipeDef
-            {
-                defName = recipeDefName,
-                label = "CCE_ExtractRecipeLabel".Translate(batchCount, payloadDef.label),
-                description = "CCE_ExtractRecipeDescription".Translate(batchCount, payloadDef.label),
-                workerClass = typeof(RecipeWorker_ExtractCargo),
-                workerCounterClass = typeof(RecipeWorkerCounter),
-                requiredGiverWorkType = WorkTypeDefOf.Crafting,
-                workAmount = WorkAmountFor(batchCount),
-                workSpeedStat = StatDefOf.GeneralLaborSpeed,
-                workTableSpeedStat = StatDefOf.WorkTableWorkSpeedFactor,
-                workSkill = SkillDefOf.Crafting,
-                ingredients = new List<IngredientCount>(),
-                products = new List<ThingDefCountClass>
-                {
-                    new ThingDefCountClass(payloadDef, batchCount)
-                },
-                recipeUsers = new List<ThingDef>(),
-                targetCountAdjustment = batchCount
-            };
-
-            DefDatabase<RecipeDef>.Add(recipeDef);
-            recipeDef.ResolveReferences();
-            return recipeDef;
-        }
-
-        private static float WorkAmountFor(int batchCount)
-        {
-            if (WorkMultipliersByBatchSize.TryGetValue(batchCount, out float multiplier))
-            {
-                return WorkAmountPerItem * multiplier;
-            }
-
-            return WorkAmountPerItem;
-        }
-
-        private static void AttachRecipesToContainers(List<ThingDef> containerDefs)
-        {
-            foreach (ThingDef containerDef in containerDefs)
-            {
-                containerDef.recipes ??= new List<RecipeDef>();
-                bool changed = false;
-                foreach (RecipeDef recipeDef in GetRecipesForContainer(containerDef))
-                {
-                    if (!containerDef.recipes.Contains(recipeDef))
-                    {
-                        containerDef.recipes.Add(recipeDef);
-                        changed = true;
-                    }
-
-                    recipeDef.recipeUsers ??= new List<ThingDef>();
-                    if (!recipeDef.recipeUsers.Contains(containerDef))
-                    {
-                        continue;
-                    }
-
-                    recipeDef.recipeUsers.Remove(containerDef);
-                }
-
-                if (DeduplicateRecipes(containerDef.recipes))
-                {
-                    changed = true;
-                }
-
-                if (changed)
-                {
-                    ClearAllRecipesCache(containerDef);
-                }
-            }
-        }
-
-        public static void ClearAllRecipesCache(ThingDef thingDef)
-        {
-            AllRecipesCachedField?.SetValue(thingDef, null);
-        }
-
-        private static bool DeduplicateRecipes(List<RecipeDef> recipes)
-        {
-            if (recipes == null || recipes.Count <= 1)
-            {
-                return false;
-            }
-
-            bool changed = false;
-            var seenRecipes = new HashSet<RecipeDef>();
-            for (int index = 0; index < recipes.Count; index++)
-            {
-                RecipeDef recipeDef = recipes[index];
-                if (recipeDef == null)
-                {
-                    recipes.RemoveAt(index);
-                    index--;
-                    changed = true;
-                    continue;
-                }
-
-                if (!seenRecipes.Add(recipeDef))
-                {
-                    recipes.RemoveAt(index);
-                    index--;
-                    changed = true;
-                }
-            }
-
-            return changed;
         }
 
         public static List<RecipeDef> DistinctRecipes(IEnumerable<RecipeDef> recipes)
@@ -816,72 +1019,12 @@ namespace CargoContainersExpanded
 
         public static List<RecipeDef> GetAllRecipesCached(ThingDef thingDef)
         {
-            return AllRecipesCachedField?.GetValue(thingDef) as List<RecipeDef>;
+            return catalogAdapter.GetAllRecipesCached(thingDef);
         }
 
         public static void SetAllRecipesCached(ThingDef thingDef, List<RecipeDef> recipes)
         {
-            AllRecipesCachedField?.SetValue(thingDef, recipes);
-        }
-
-        private static void ConfigureWorkGiver(List<ThingDef> containerDefs)
-        {
-            WorkGiverDef workGiverDef = DefDatabase<WorkGiverDef>.GetNamedSilentFail("FT_DoBillsExtractCargoContainers");
-            if (workGiverDef == null)
-            {
-                Log.Error("Cargo Containers Expanded: missing extraction work giver.");
-                return;
-            }
-
-            workGiverDef.fixedBillGiverDefs = containerDefs;
-        }
-
-        private static IEnumerable<RecipeDef> GetRecipesForContainer(ThingDef containerDef)
-        {
-            var props = containerDef.GetCompProperties<CompProperties_ExtractableContainer>();
-            if (props?.fixedPayloadDef != null)
-            {
-                List<RecipeDef> recipeDefs = RecipesFor(props.fixedPayloadDef);
-                if (recipeDefs != null)
-                {
-                    foreach (RecipeDef recipeDef in recipeDefs)
-                    {
-                        yield return recipeDef;
-                    }
-                }
-
-                yield break;
-            }
-
-            if (containerDef.stuffCategories == null)
-            {
-                yield break;
-            }
-
-            foreach (KeyValuePair<ThingDef, List<RecipeDef>> recipeByPayload in RecipesByPayload)
-            {
-                if (CanBePayloadStuff(recipeByPayload.Key, containerDef.stuffCategories))
-                {
-                    foreach (RecipeDef recipeDef in recipeByPayload.Value)
-                    {
-                        yield return recipeDef;
-                    }
-                }
-            }
-        }
-
-        private readonly struct ExtractionRecipeData
-        {
-            public readonly ThingDef PayloadDef;
-            public readonly int BatchCount;
-            public readonly bool IsLegacy;
-
-            public ExtractionRecipeData(ThingDef payloadDef, int batchCount, bool isLegacy)
-            {
-                PayloadDef = payloadDef;
-                BatchCount = batchCount;
-                IsLegacy = isLegacy;
-            }
+            catalogAdapter.SetAllRecipesCached(thingDef, recipes);
         }
     }
 
@@ -914,42 +1057,21 @@ namespace CargoContainersExpanded
 
         private static List<Thing> ClampProductsToPayload(IEnumerable<Thing> products, CompExtractableContainer extractableComp, int batchCount)
         {
-            var clampedProducts = new List<Thing>();
             ThingDef payloadDef = extractableComp.PayloadDef;
             float rotProgressPct = extractableComp.GetCurrentRotProgressPct();
-            int remainingBatchCount = batchCount;
-            foreach (Thing product in products)
-            {
-                if (product == null)
-                {
-                    continue;
-                }
-
-                if (payloadDef == null || product.def != payloadDef)
-                {
-                    product.Destroy();
-                    continue;
-                }
-
-                int requestedCount = Math.Min(product.stackCount, remainingBatchCount);
-                int takenCount = extractableComp.TakePayload(requestedCount);
-                if (takenCount <= 0)
-                {
-                    product.Destroy();
-                    break;
-                }
-
-                product.stackCount = takenCount;
-                ApplyRotProgress(product, rotProgressPct);
-                clampedProducts.Add(product);
-                remainingBatchCount -= takenCount;
-                if (remainingBatchCount <= 0)
-                {
-                    break;
-                }
-            }
-
-            return clampedProducts;
+            PayloadAccount account = extractableComp.OpenPayloadAccountForHost();
+            IReadOnlyList<Thing> clampedProducts = PayloadProductClamper.Clamp(
+                account,
+                payloadDef?.defName,
+                products,
+                batchCount,
+                product => product?.def?.defName,
+                product => product?.stackCount ?? 0,
+                (product, count) => product.stackCount = count,
+                product => product.Destroy(),
+                product => ApplyRotProgress(product, rotProgressPct));
+            extractableComp.ApplyPayloadSnapshotForHost(account.Snapshot);
+            return clampedProducts.ToList();
         }
 
         private static void ApplyRotProgress(Thing product, float rotProgressPct)
@@ -997,54 +1119,13 @@ namespace CargoContainersExpanded
         }
     }
 
-    public static class CargoExtractionPowerBypass
-    {
-        private const string ExtractionWorkGiverDefName = "FT_DoBillsExtractCargoContainers";
-
-        [ThreadStatic]
-        private static int activeExtractionWorkGiverScopes;
-
-        public static bool IsActive => activeExtractionWorkGiverScopes > 0;
-
-        public static bool IsExtractableContainerWithPayload(Thing thing)
-        {
-            CargoExtractionUtility.TryGetExtractableComp(thing, out CompExtractableContainer extractableComp);
-            return extractableComp != null && extractableComp.HasPayload;
-        }
-
-        public static bool ShouldBypassPowerFor(Thing thing)
-        {
-            return IsActive && IsExtractableContainerWithPayload(thing);
-        }
-
-        public static bool TryEnter(WorkGiver_DoBill workGiver)
-        {
-            if (workGiver?.def?.defName != ExtractionWorkGiverDefName)
-            {
-                return false;
-            }
-
-            activeExtractionWorkGiverScopes++;
-            return true;
-        }
-
-        public static void Exit(bool entered)
-        {
-            if (!entered)
-            {
-                return;
-            }
-
-            activeExtractionWorkGiverScopes = Math.Max(activeExtractionWorkGiverScopes - 1, 0);
-        }
-    }
-
     [HarmonyPatch(typeof(CompPowerTrader), nameof(CompPowerTrader.PowerOn), MethodType.Getter)]
     public static class CompPowerTrader_PowerOn_ExtractCargoPatch
     {
         public static void Postfix(CompPowerTrader __instance, ref bool __result)
         {
-            if (!__result && CargoExtractionPowerBypass.ShouldBypassPowerFor(__instance?.parent))
+            CargoExtractionUtility.TryGetExtractableComp(__instance?.parent, out CompExtractableContainer extractableComp);
+            if (!__result && ExtractionCompatibilityScopes.ShouldBypassPower(extractableComp?.HasPayload == true))
             {
                 __result = true;
             }
@@ -1054,14 +1135,14 @@ namespace CargoContainersExpanded
     [HarmonyPatch(typeof(WorkGiver_DoBill), nameof(WorkGiver_DoBill.JobOnThing))]
     public static class WorkGiverDoBill_JobOnThing_ExtractCargoPatch
     {
-        public static void Prefix(WorkGiver_DoBill __instance, ref bool __state)
+        internal static void Prefix(WorkGiver_DoBill __instance, ref ExtractionWorkScope __state)
         {
-            __state = CargoExtractionPowerBypass.TryEnter(__instance);
+            __state = ExtractionCompatibilityScopes.EnterWorkGiver(__instance?.def?.defName);
         }
 
-        public static Exception Finalizer(bool __state, Exception __exception)
+        internal static Exception Finalizer(ExtractionWorkScope __state, Exception __exception)
         {
-            CargoExtractionPowerBypass.Exit(__state);
+            __state?.Dispose();
             return __exception;
         }
     }
@@ -1075,7 +1156,7 @@ namespace CargoContainersExpanded
         {
             var billGiver = GetBillGiver(__instance);
             Thing billGiverThing = billGiver?.AsThing();
-            if (!CargoExtractionUtility.CanFilterRecipeLists ||
+            if (!RimWorldRecipeListHost.CanFilterRecipeLists ||
                 !CargoExtractionUtility.TryGetExtractableComp(billGiverThing, out _) ||
                 recipeOptionsMaker == null)
             {
@@ -1088,7 +1169,22 @@ namespace CargoContainersExpanded
 
         private static List<FloatMenuOption> MakeFilteredRecipeOptions(Thing billGiverThing, Func<List<FloatMenuOption>> originalOptionsMaker)
         {
-            return RecipeListState.WithFilteredRecipes(billGiverThing, originalOptionsMaker);
+            ThingDef thingDef = billGiverThing?.def;
+            var host = new RimWorldRecipeListHost(thingDef);
+            List<RecipeDef> filteredRecipes = CargoExtractionUtility.GetRecipesForBillGiver(billGiverThing);
+            var filteredRecipeDefNames = new List<string>();
+            if (filteredRecipes != null)
+            {
+                foreach (RecipeDef recipeDef in filteredRecipes)
+                {
+                    filteredRecipeDefNames.Add(recipeDef?.defName);
+                }
+            }
+
+            return ExtractionCompatibilityScopes.WithFilteredRecipes(
+                host,
+                filteredRecipeDefNames,
+                originalOptionsMaker);
         }
 
         internal static IBillGiver GetBillGiver(BillStack billStack)
@@ -1127,74 +1223,6 @@ namespace CargoContainersExpanded
             }
 
             return false;
-        }
-    }
-
-    public class RecipeListState
-    {
-        [ThreadStatic]
-        private static HashSet<ThingDef> activeThingDefs;
-
-        private readonly ThingDef thingDef;
-        private readonly List<RecipeDef> recipes;
-        private readonly List<RecipeDef> allRecipesCached;
-
-        public RecipeListState(ThingDef thingDef, List<RecipeDef> recipes, List<RecipeDef> allRecipesCached)
-        {
-            this.thingDef = thingDef;
-            this.recipes = recipes;
-            this.allRecipesCached = allRecipesCached;
-        }
-
-        public static T WithFilteredRecipes<T>(Thing billGiverThing, Func<T> action)
-        {
-            ThingDef thingDef = billGiverThing?.def;
-            List<RecipeDef> originalRecipes = thingDef?.recipes;
-            if (!CargoExtractionUtility.CanFilterRecipeLists || thingDef == null || originalRecipes == null)
-            {
-                return action();
-            }
-
-            activeThingDefs ??= new HashSet<ThingDef>();
-            if (!activeThingDefs.Add(thingDef))
-            {
-                return action();
-            }
-
-            try
-            {
-                List<RecipeDef> filteredRecipes = CargoExtractionUtility.GetRecipesForBillGiver(billGiverThing);
-                if (filteredRecipes == null)
-                {
-                    return action();
-                }
-
-                List<RecipeDef> originalAllRecipesCached = CargoExtractionUtility.GetAllRecipesCached(thingDef);
-                var state = new RecipeListState(thingDef, originalRecipes, originalAllRecipesCached);
-                thingDef.recipes = filteredRecipes;
-                try
-                {
-                    CargoExtractionUtility.SetAllRecipesCached(thingDef, filteredRecipes);
-                    return action();
-                }
-                finally
-                {
-                    state.Restore();
-                }
-            }
-            finally
-            {
-                activeThingDefs.Remove(thingDef);
-            }
-        }
-
-        public void Restore()
-        {
-            if (thingDef != null)
-            {
-                thingDef.recipes = recipes;
-                CargoExtractionUtility.SetAllRecipesCached(thingDef, allRecipesCached);
-            }
         }
     }
 

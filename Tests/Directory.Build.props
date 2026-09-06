@@ -1,0 +1,5 @@
+<Project>
+  <PropertyGroup>
+    <BaseIntermediateOutputPath>..\TestResults\obj\</BaseIntermediateOutputPath>
+  </PropertyGroup>
+</Project>

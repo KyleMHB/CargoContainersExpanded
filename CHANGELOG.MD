@@ -1,5 +1,20 @@
 # Changelog
 
+Agent read route: read only the newest relevant release; locate older versions by searching `^## ` headings.
+
+## 2026-09-05
+
+### Changed
+
+- Reworked the README and Steam Workshop source around the shared public-documentation templates.
+- Clarified the fork's scoped MIT license, upstream provenance, compatibility, usage, build, and forking-policy details.
+
+### Internal
+
+- Added a net472 test project with pinned NUnit, NUnit adapter, and Microsoft.NET.Test.Sdk packages.
+- Deepened extraction recipe cataloging, payload accounting and refunds, refrigeration policy, and Harmony compatibility scopes while preserving existing Def names, save keys, and balance values.
+- Added 61 deterministic architecture tests covering catalog, payload, refrigeration, and compatibility behavior.
+
 ## 2026-08-28
 
 - Improved runtime performance with cached extractable-container checks, inert tank ticking, and guarded recipe filtering.

@@ -20,8 +20,6 @@ namespace CargoContainersExpanded
 
     public class CompRefrigeratedContainer : CompRottable
     {
-        // Intentional balance rule: unpowered storage doubles the loose item's rot duration.
-        private const float UnpoweredRotDurationMultiplier = 2f;
         private CompPowerTrader powerComp;
 
         private ThingDef StuffDef => parent?.Stuff ?? parent?.def?.defaultStuff;
@@ -35,7 +33,11 @@ namespace CargoContainersExpanded
 
         public override void CompTickRare()
         {
-            if (IsPowered())
+            RefrigerationRuntimeDecision decision = RefrigerationPolicy.EvaluateRuntime(
+                IsPowered(),
+                0f,
+                PropsRot?.TicksToRotStart ?? 0);
+            if (!decision.ShouldTick)
             {
                 return;
             }
@@ -52,7 +54,11 @@ namespace CargoContainersExpanded
 
             float temperature = GetCurrentTemperature();
             float rotRate = GenTemperature.RotRateAtTemperature(temperature);
-            return GetRotInspectString(rotRate);
+            RefrigerationRuntimeDecision decision = RefrigerationPolicy.EvaluateRuntime(
+                false,
+                rotRate,
+                PropsRot?.TicksToRotStart ?? 0);
+            return GetRotInspectString(decision);
         }
 
         private bool IsPowered()
@@ -79,15 +85,15 @@ namespace CargoContainersExpanded
         {
             var stuffDef = StuffDef;
             var rottableProps = stuffDef?.GetCompProperties<CompProperties_Rottable>();
-            return (rottableProps?.daysToRotStart ?? 1f) * UnpoweredRotDurationMultiplier;
+            return RefrigerationPolicy.UnpoweredDaysToRot(rottableProps?.daysToRotStart);
         }
 
-        private string GetRotInspectString(float rotRate)
+        private string GetRotInspectString(RefrigerationRuntimeDecision decision)
         {
             var builder = new System.Text.StringBuilder();
             builder.AppendLine(GetRotStateLabel());
-            builder.AppendLine(GetTemperatureRotLabel(rotRate));
-            builder.Append(GetRotRateLabel(rotRate));
+            builder.AppendLine(GetTemperatureRotLabel(decision));
+            builder.Append(GetRotRateLabel(decision));
             return builder.ToString();
         }
 
@@ -106,15 +112,15 @@ namespace CargoContainersExpanded
             }
         }
 
-        private string GetTemperatureRotLabel(float rotRate)
+        private string GetTemperatureRotLabel(RefrigerationRuntimeDecision decision)
         {
-            if (rotRate <= 0f)
+            if (decision.TemperatureState == RefrigerationTemperatureState.Frozen)
             {
                 return "CCE_CurrentlyFrozen".Translate();
             }
 
             string ticksUntilRot = FormatTicksUntilRot(TicksUntilRotAtCurrentTemp);
-            if (rotRate < 1f)
+            if (decision.TemperatureState == RefrigerationTemperatureState.Refrigerated)
             {
                 return "CCE_CurrentlyRefrigerated".Translate(ticksUntilRot);
             }
@@ -122,15 +128,11 @@ namespace CargoContainersExpanded
             return "CCE_NotRefrigerated".Translate(ticksUntilRot);
         }
 
-        private string GetRotRateLabel(float rotRate)
+        private string GetRotRateLabel(RefrigerationRuntimeDecision decision)
         {
-            float rotPercentPerDay = PropsRot.TicksToRotStart > 0
-                ? rotRate * GenDate.TicksPerDay / PropsRot.TicksToRotStart
-                : 0f;
-
             return "CCE_RotRate".Translate(
-                rotRate.ToString("0.##", CultureInfo.InvariantCulture),
-                (rotPercentPerDay * 100f).ToString("0.#", CultureInfo.InvariantCulture));
+                decision.TemperatureRotRate.ToString("0.##", CultureInfo.InvariantCulture),
+                (decision.RotPercentPerDay * 100f).ToString("0.#", CultureInfo.InvariantCulture));
         }
 
         private float GetCurrentTemperature()
@@ -288,72 +290,51 @@ namespace CargoContainersExpanded
 
         private static bool IsEligibleTargetDef(ThingDef def)
         {
-            if (def == null || def == ThingDefOf.Steel)
+            if (def == null)
             {
                 return false;
             }
 
-            if (def.category != ThingCategory.Item)
-            {
-                return false;
-            }
-
-            if (IsCorpseOrMinifiedThingClass(def.thingClass))
-            {
-                return false;
-            }
-
-            if (def.defName.StartsWith("Blueprint_", StringComparison.OrdinalIgnoreCase) ||
-                def.defName.StartsWith("Frame_", StringComparison.OrdinalIgnoreCase) ||
-                def.defName.StartsWith("Minified_", StringComparison.OrdinalIgnoreCase) ||
-                def.defName.StartsWith("Egg", StringComparison.OrdinalIgnoreCase) ||
-                def.defName.IndexOf("Corpse", StringComparison.OrdinalIgnoreCase) >= 0)
-            {
-                return false;
-            }
-
-            if (HasCorpseThingCategory(def))
-            {
-                return false;
-            }
-
-            if (def.GetCompProperties<CompProperties_Rottable>() == null)
-            {
-                return false;
-            }
-
-            if (def.GetCompProperties<CompProperties_EggLayer>() != null ||
-                def.GetCompProperties<CompProperties_Hatcher>() != null)
-            {
-                return false;
-            }
-
-            return true;
+            return RefrigerationPolicy.EvaluateEligibility(
+                new RefrigerationDefFacts(
+                    def.defName,
+                    def == ThingDefOf.Steel,
+                    def.category == ThingCategory.Item,
+                    IsCorpseThingClass(def.thingClass),
+                    IsMinifiedThingClass(def.thingClass),
+                    GetThingCategoryDefNames(def),
+                    def.GetCompProperties<CompProperties_Rottable>() != null,
+                    def.GetCompProperties<CompProperties_EggLayer>() != null,
+                    def.GetCompProperties<CompProperties_Hatcher>() != null)).IsEligible;
         }
 
-        private static bool IsCorpseOrMinifiedThingClass(Type thingClass)
+        private static bool IsCorpseThingClass(Type thingClass)
         {
-            return thingClass != null &&
-                (typeof(Corpse).IsAssignableFrom(thingClass) ||
-                typeof(MinifiedThing).IsAssignableFrom(thingClass));
+            return thingClass != null && typeof(Corpse).IsAssignableFrom(thingClass);
         }
 
-        private static bool HasCorpseThingCategory(ThingDef def)
+        private static bool IsMinifiedThingClass(Type thingClass)
         {
-            if (def.thingCategories == null)
+            return thingClass != null && typeof(MinifiedThing).IsAssignableFrom(thingClass);
+        }
+
+        private static IReadOnlyList<string> GetThingCategoryDefNames(ThingDef def)
+        {
+            var categoryNames = new List<string>();
+            if (def?.thingCategories == null)
             {
-                return false;
+                return categoryNames;
             }
 
-            foreach (var category in def.thingCategories)
+            foreach (ThingCategoryDef category in def.thingCategories)
             {
-                if (category != null && category.defName.IndexOf("Corpse", StringComparison.OrdinalIgnoreCase) >= 0)
+                if (category != null)
                 {
-                    return true;
+                    categoryNames.Add(category.defName);
                 }
             }
 
-            return false;
+            return categoryNames;
         }
 
     }

@@ -27,5 +27,11 @@
     <Compile Include="bootstrap.cs" />
     <Compile Include="refrigerated-container.cs" />
     <Compile Include="extraction-container.cs" />
+    <Compile Include="extraction-recipe-catalog.cs" />
+    <Compile Include="payload-account.cs" />
+    <Compile Include="refrigeration-policy.cs" />
+    <Compile Include="extraction-compatibility-scopes.cs" />
+    <Compile Include="rimworld-recipe-list-host.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
 </Project>

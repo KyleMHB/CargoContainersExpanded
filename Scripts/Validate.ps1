@@ -197,7 +197,7 @@ if (-not (Test-Path -LiteralPath (Join-Path $assembliesPath 'CargoContainersExpa
 $forbiddenBinaryPatterns = @('0Harmony.dll', 'Assembly-CSharp.dll', 'UnityEngine*.dll', '*.pdb')
 foreach ($pattern in $forbiddenBinaryPatterns) {
     Get-ChildItem -LiteralPath $repoRoot -Recurse -File -Filter $pattern |
-        Where-Object { $_.FullName -notmatch '[\\/](obj|bin)[\\/]' } |
+        Where-Object { $_.FullName -notmatch '[\\/](obj|bin|TestResults)[\\/]' } |
         ForEach-Object { Add-Failure "Forbidden runtime/dependency output: $($_.FullName)" }
 }
 

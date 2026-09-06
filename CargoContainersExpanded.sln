@@ -5,6 +5,8 @@ VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "cargo-containers-expanded", "Source\cargo-containers-expanded.csproj", "{44E9B301-B03C-49D9-A105-03F163099AE5}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CargoContainersExpanded.Tests", "Tests\CargoContainersExpanded.Tests.csproj", "{D1D2A71E-6046-4D94-8F72-3EE8D0CB1C5A}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,5 +17,9 @@ Global
 		{44E9B301-B03C-49D9-A105-03F163099AE5}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{44E9B301-B03C-49D9-A105-03F163099AE5}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{44E9B301-B03C-49D9-A105-03F163099AE5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D1D2A71E-6046-4D94-8F72-3EE8D0CB1C5A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D1D2A71E-6046-4D94-8F72-3EE8D0CB1C5A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D1D2A71E-6046-4D94-8F72-3EE8D0CB1C5A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D1D2A71E-6046-4D94-8F72-3EE8D0CB1C5A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

@@ -25,8 +25,9 @@ Refrigerated containers use a rottable resource as their construction material a
 [*][url=https://steamcommunity.com/sharedfiles/filedetails/?id=2009463077]Harmony[/url].
 [/list]
 
-[h1]Compatibility, Load Order, Multiplayer, and Save Safety[/h1]
+[h1]Compatibility, Load Order, and Save Safety[/h1]
 [list]
+[*][b]Load order:[/b] Keep Harmony above Cargo Containers Expanded.
 [*][b]Original mod:[/b] The original Cargo Container package is declared incompatible because this fork replaces it.
 [*][b]Save compatibility:[/b] Existing def names and save keys are preserved for the supported RimWorld 1.6 fork data.
 [*][b]Localization:[/b] English is complete. Legacy Simplified and Traditional Chinese definitions remain translated; newer extraction and refrigeration text falls back to English.
@@ -39,12 +40,9 @@ AOBA created the original Cargo Container mod. This fork keeps its compact-stora
 [h1]Credits[/h1]
 Original mod by AOBA. Current maintained fork by KyleMHB. The inherited definitions and artwork remain credited to their original creator.
 
-[h1]License and Forking Policy[/h1]
-Fork-authored code and contributions use the scoped MIT notice in the source repository. Inherited upstream definitions, text, and artwork retain their separate, currently unknown provenance and are not relicensed by that notice.
+[h1]License[/h1]
+Fork-authored code and contributions use the scoped MIT notice in the source repository. Inherited upstream definitions, text, and artwork retain their original terms, which are currently unknown, and are not relicensed by that notice.
 
-If your fork primarily consists of bug fixes or feature additions that align with the core vision of this mod, I reserve the right to request that your changes be submitted as a Pull Request to my existing codebase rather than being published as a completely separate standalone release.
-
-This is a project request, not an additional license restriction.
 
 [h1]Links[/h1]
 Support me on Ko-fi. This does not imply endorsement by the original authors.
